@@ -1,70 +1,132 @@
-<div align="center"><img src = "https://user-images.githubusercontent.com/31413093/197097625-5b3bd3cf-2bd6-4a3a-8059-a1fe9f28100b.svg" height="100px" alt="My Happy SVG"/></div>
-
-<h2 align="center">template-vite-react-ts-tailwind</h2>
+# FlowFi-BTC — sBTC Capital Settlement Rail
 
 <div align="center">
-<a href="https://reactjs.org/"><image src="https://img.shields.io/static/v1?label=React&message=19.1.1&style=for-the-badge&labelColor=FFFFFF&logo=react&color=61DAFB"/></a> <a href="https://www.typescriptlang.org/"><image src="https://img.shields.io/static/v1?label=TypeScript&message=5.8.3&style=for-the-badge&labelColor=FFFFFF&logo=typescript&color=3178C6"/></a> <a href="https://tailwindcss.com/"><image src="https://img.shields.io/static/v1?label=Tailwind%20CSS&message=4.1.12&style=for-the-badge&labelColor=FFFFFF&logo=tailwindcss&color=06B6D4"/></a> <a href="https://vite.dev/"><image src="https://img.shields.io/static/v1?label=Vite&message=7.1.4&style=for-the-badge&labelColor=FFFFFF&logo=vite&color=646CFF"/></a>
+  <img src="https://avatars.githubusercontent.com/u/296891105?s=200&v=4" height="100px" alt="FlowFi Logo"/>
+  <h1 align="center">FlowFi-BTC</h1>
+  <p align="center"><b>Bitcoin-Native Capital Settlement Rail for Real-World Trade Receivables</b></p>
 </div>
 
-## Introduction
+<div align="center">
+  <a href="https://stacks.co/"><img src="https://img.shields.io/badge/Network-Stacks%20Testnet-6B46C1?style=for-the-badge&logo=stacks"/></a>
+  <a href="https://btc.us/"><img src="https://img.shields.io/badge/Asset-sBTC%20Native-F7931A?style=for-the-badge&logo=bitcoin"/></a>
+  <a href="https://react.dev/"><img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react"/></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript"/></a>
+  <a href="https://vite.dev/"><img src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite"/></a>
+</div>
 
-A starter [Vite](https://vitejs.dev/) template having:
+---
 
-- [React](https://react.dev/)
-- [TypeScript](https://www.typescriptlang.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- Multiple [Oxc](https://oxc.rs) recommended rules are configured
+## 📌 What is FlowFi?
 
-> [!IMPORTANT]
-> 
-> The latest code of this template has updated Vite to version 7.0+, which requires [Node.js](https://nodejs.org/) version 20.19+ or 22.12+. Please upgrade if your package manager warns about it. Or you can use [this release](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/releases/tag/release-2025.03.27) which is vite@5 and works with Node.js 18 or 20.
-> 
-> 该模板的最新代码中，已经将 Vite 的版本更新到了 7.0+，需要 20.19+ 或 22.12+ 版本的 [Node.js](https://nodejs.org/)。当你的包管理器发出警告时，请注意升级你的 Node.js 版本。如果你需要 vite@5，请使用[这个版本](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/releases/tag/release-2025.03.27)，可兼容 Node.js 18 或 20。
+**FlowFi** (FlowFi-BTC) is an institutional-grade, Bitcoin-native capital settlement rail built on the Stacks blockchain. It enables real-world businesses to unlock working capital by financing verified trade receivables directly through **sBTC** liquidity pools.
 
-> [!TIP]
-> 
-> This code repository may occasionally update its dependency versions. If the dependency versions in the latest code do not meet your expectations, please go to [Tags](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/tags) section to download a previous version of this template. I will display the dependencies used in each Tag, please choose the one you need.
-> 
-> 这个代码仓库可能会不定期更新其依赖包的版本。如果最新代码中依赖的版本不符合你的期望，请移步[Tags](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/tags)下载之前的模板。每个Tag中使用的依赖都会展示在Tag详情中，请选择你需要的版本。
+By bridging supply chain financing with trust-minimized Bitcoin smart contracts, FlowFi allows sBTC holders to earn sustainable yield (avg. ~9.8% APY) backed by real-economy commercial cash flows.
 
-## Usage
+---
 
-> [!TIP]
-> 
-> The fastest way to use this template is to click the “Use this template” button on the top right of this repository. It will help you create a new repository quickly, and you can make any modifications to your own repository. If you still want to download this template separately, please continue reading.
-> 
-> 使用该模板的最快方式，就是点击本仓库右上角的“使用该模板”按扭。这帮助你使用该模板迅速创建一个新的仓库，然后你可以对自己的仓库进行任何修改。如果你仍然希望单独下载此模板，可继续往下读。
+## ✨ Key Features & User Flow
 
-If you need a copy of this repository. You can [download](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/archive/refs/heads/main.zip) a copy as zip but [tiged](https://github.com/tiged/tiged) is recommended.
+FlowFi implements an end-to-end 8-stage UI & smart contract workflow:
 
-After you installed tiged, please excute the following commands:
+1. **Public Marketing & Landing Page (`/`)**
+   - Public onboarding hero banner (*"Unlock Working Capital with sBTC Liquidity"*).
+   - Live pilot statistics ($2.4M+ Receivables Financed, 34.5 sBTC Deployed, 9.8% APY).
+   - 4-step interactive *"How It Works"* breakdown and featured live testnet receivable preview.
 
-```sh
-$ cd path-to-save-your-project
-$ tiged royrao2333/template-vite-react-ts-tailwind your-project-name
+2. **App Dashboard (`/dashboard`)**
+   - Control panel for logged-in users tracking account overviews, recent contract activity, and quick submit prompts.
+
+3. **Submit Receivable (`/submit-receivable`)**
+   - Interactive 5-step registration wizard:
+     1. Business Profile & Representative Details
+     2. Receivable Invoice Amount (sBTC & USD) & Target Block Height
+     3. Counterparty / Debtor Credentials
+     4. Off-Chain SHA-256 Document Hashing (`doc-hash`)
+     5. Final Review & Contract Registration
+
+4. **Verification Status (`/verification`)**
+   - Compliance attestation tracker showing off-chain document integrity records, reviewer node identities, SHA-256 hashes, and verification progress timelines.
+
+5. **Receivable Detail (`/receivable/:id`)**
+   - On-chain Clarity contract state breakdown: borrower principal, capital provider principal, due block height target, and interactive state transition controls.
+
+6. **Funding Flow Confirmation Modal**
+   - On-chain transaction execution modal validating capital provider wallet balances and confirming sBTC transfers into Clarity settlement contract pools.
+
+7. **Active Funding Portfolio (`/funding`)**
+   - Portfolio management view displaying active capital positions, total sBTC deployed, completed repayments, and default statistics.
+
+8. **Transparency & Public Audit Log (`/history`)**
+   - Public chronological index of all Stacks testnet contract events, block heights, and transaction hashes for 100% on-chain auditability.
+
+9. **Settings & Developer Tools (`/settings`)**
+   - Stacks node RPC configuration, network environment toggle (Testnet vs. Mainnet preview), Leather/Xverse wallet status, and demo state reset controls.
+
+---
+
+## 🛠️ Smart Contract Architecture
+
+The core settlement engine runs on the Stacks Clarity smart contract (`sbtc-capital-rail-v2.clar`).
+
+### State Machine Lifecycle
+```
+[ Registered (0) ]  ──(Fund sBTC)──>  [ Funded (1) ]  ──(Repay)───>  [ Repaid (2) ]
+                                           │
+                                           └──(Default)──>  [ Defaulted (3) ]
 ```
 
-After getting a copy of this repository, you can use your package manager to install dependecies:
+- **Registered (`0`)**: Invoice registered on-chain with doc-hash and target due block height.
+- **Funded (`1`)**: Capital provider transfers sBTC to the receivable smart contract pool.
+- **Repaid (`2`)**: Debtor settles invoice amount plus yield upon maturity; sBTC is released to provider.
+- **Defaulted (`3`)**: Event recorded on-chain if repayment target block passes without settlement.
 
-```sh
-$ cd path-to-your-project
-$ pnpm install
+---
 
-# npm install
-# yarn install
+## 🚀 Getting Started & Local Development
+
+### Prerequisites
+- **Node.js**: v20.19+ or v22.12+
+- **Package Manager**: `npm` (or `pnpm` / `yarn`)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/FlowFi-BTC/FlowFi.git
+cd FlowFi
+
+# Install dependencies
+npm install
 ```
 
-Let's run!
+### Running Locally
 
-```sh
-$ pnpm run dev
-
-# npm run dev
-# yarn run dev
+```bash
+# Start the local development server
+npm run dev
 ```
 
-> We've already implemented some recommended configurations in `.oxlintrc.json`, `.oxfmtrc.json`. Feel free to edit them if you have your own preferences.
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Contributing
+### Building for Production
 
-Feel free to dive in! [Open an issue](https://github.com/RoyRao2333/template-vite-react-ts-tailwind/issues/new) or submit PRs.
+```bash
+# Compile TypeScript & Build Production Assets
+npm run build
+```
+
+---
+
+## 🎨 Tech Stack & Design Aesthetics
+
+- **Framework**: [React 19](https://react.dev/) + [Vite 7](https://vite.dev/)
+- **Language**: [TypeScript 5.8](https://www.typescriptlang.org/) (Strict `verbatimModuleSyntax`)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) + Neo-brutalist custom design system (`font-syne`, tactile neo-borders, dynamic drop shadows, high-contrast vibrant palette)
+- **Routing**: [React Router v7](https://reactrouter.com/)
+- **Blockchain Integration**: Stacks Testnet Clarity Smart Contracts, sBTC micro-units, Leather & Xverse Wallet connectors.
+
+---
+
+## 📄 License
+
+Open source under the [MIT License](LICENSE).
