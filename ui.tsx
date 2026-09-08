@@ -79,7 +79,7 @@ function NavItem({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left text-[13.5px] transition-colors select-none ${
+      className={`relative flex w-full items-center gap-3  px-3 py-1.5 text-left text-[13.5px] transition-colors select-none ${
         active
           ? 'bg-white/[0.07] text-white font-medium'
           : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
@@ -87,7 +87,7 @@ function NavItem({
     >
       {/* Active bar */}
       {active && (
-        <span className="absolute -left-3 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-blue-500" />
+        <span className="absolute -left-3 top-1/2 h-4 w-[3px] -translate-y-1/2  bg-blue-500" />
       )}
 
       {/* Icon */}
@@ -118,7 +118,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, onNavigate }) => {
       <div className="flex items-center justify-between px-3 pb-6 pt-1 lg:block">
         <div className="flex items-center gap-2.5">
           {/* Logo mark */}
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-md shadow-sky-500/20">
+          <div className="grid h-8 w-8 shrink-0 place-items-center  bg-gradient-to-br from-sky-500 to-blue-700 text-white shadow-md shadow-sky-500/20">
             <span className="font-syne text-[11px] font-black tracking-wider">FS</span>
           </div>
 
@@ -126,8 +126,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, onNavigate }) => {
             <div className="flex items-center gap-1.5">
               <span className="text-[15px] font-bold tracking-tight text-white">FlowScan</span>
               {/* MVP badge — version pill style */}
-              <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.02] px-2 py-0.5 font-syne text-[9px] font-semibold text-blue-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+              <span className="flex items-center gap-1  border border-white/10 bg-white/[0.02] px-2 py-0.5 font-syne text-[9px] font-semibold text-blue-300">
+                <span className="h-1.5 w-1.5  bg-blue-500" />
                 MVP
               </span>
             </div>
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, onNavigate }) => {
           {trackedProtocols.map(({ name, type, color }) => (
             <div
               key={name}
-              className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 py-1.5"
+              className="flex items-center justify-between  border border-white/10 bg-white/[0.02] px-3 py-1.5"
             >
               <span className="font-syne text-[11px] text-zinc-300">{name}</span>
               <span className={`font-syne text-[10px] font-semibold ${color}`}>{type}</span>
@@ -206,12 +206,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ active, onNavigate }) => {
         {/* ── Node status ── */}
         <div className="mx-0 my-3 border-t border-white/10" />
 
-        <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2">
+        <div className="flex items-center justify-between  border border-white/10 bg-white/[0.02] px-3 py-2">
           <span className="flex items-center gap-2 text-[12px] font-semibold text-emerald-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="h-1.5 w-1.5  bg-emerald-400 animate-pulse" />
             Node Connected
           </span>
-          <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.02] px-2 py-0.5 font-syne text-[10px] text-zinc-500">
+          <span className="flex items-center gap-1  border border-white/10 bg-white/[0.02] px-2 py-0.5 font-syne text-[10px] text-zinc-500">
             v2.4
           </span>
         </div>

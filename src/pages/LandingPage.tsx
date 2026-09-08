@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWallet } from '../hooks/useWallet';
-import { MOCK_RECEIVABLE } from '../data/mockData';
+import { useUser } from '../context/UserContext';
 import { FundingModal } from '../components/modular/receivable/FundingModal';
 
-// Tiny hand-drawn 4-point star for high-energy neo-brutal aesthetics
+// Hand-drawn 4-point star for neo-brutal aesthetics
 const RailStar = ({ className = '' }: { className?: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" className={className}>
     <path
@@ -19,16 +18,18 @@ const RailStar = ({ className = '' }: { className?: string }) => (
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { wallet, connect, disconnect } = useWallet();
+  const { token, isVerified } = useUser();
+  const hasToken = !!token || (typeof window !== 'undefined' && !!localStorage.getItem('flowfi_token'));
+
   const [showWalletModal, setShowWalletModal] = useState(false);
   const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] text-black font-syne selection:bg-[#a8ff3e] selection:text-black">
-      {/* ── Public Top Header Bar ── */}
+      {/* ── 1. NAVBAR ── */}
       <header className="sticky top-0 z-40 border-b-[3px] border-black bg-white px-4 sm:px-8 py-3.5 shadow-sm">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          {/* Brand Logo */}
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="grid h-10 w-10 shrink-0 place-items-center rounded neo-border neo-shadow-btn overflow-hidden bg-[#a8ff3e] group-hover:-translate-y-0.5 transition-transform">
               <img
@@ -39,381 +40,648 @@ export const LandingPage: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-syne font-black text-lg tracking-tight text-black">
+                <span className="font-syne font-medium text-lg tracking-tight text-black">
                   FlowFi-BTC
                 </span>
-                <span className="bg-[#a8ff3e] text-black text-[10px] font-syne font-extrabold px-2 py-0.5 rounded-full neo-border">
-                 Beta
+                <span className="bg-[#a8ff3e] text-black text-[10px] font-syne font-medium px-2 py-0.5  neo-border">
+                  Beta
                 </span>
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 hidden sm:block">
-                sBTC Capital Settlement Rail
+              <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 hidden sm:block">
+                
               </p>
             </div>
           </Link>
 
           {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6 font-syne text-sm font-bold">
-            <Link to="/dashboard" className="text-gray-700 hover:text-black transition-colors">
-              Overview
+          <nav className="hidden lg:flex items-center gap-6 font-syne text-sm">
+            <Link to="/marketplace" className="text-gray-700 hover:text-black transition-colors font-medium">
+              Explore Receivables
             </Link>
-            <Link to="/funding" className="text-gray-700 hover:text-black transition-colors">
-              Active Funding
-            </Link>
-            <Link to="/verification" className="text-gray-700 hover:text-black transition-colors">
-              Verification
-            </Link>
-            <Link to="/history" className="text-gray-700 hover:text-black transition-colors">
-              Transparency
-            </Link>
-            <Link to="/api-docs" className="text-gray-700 hover:text-black transition-colors">
-              Docs
-            </Link>
+            <a href="#how-it-works" className="text-gray-700 hover:text-black transition-colors">
+              How It Works
+            </a>
+            <a href="#for-businesses" className="text-gray-700 hover:text-black transition-colors">
+              For Businesses
+            </a>
+            <a href="#for-capital-providers" className="text-gray-700 hover:text-black transition-colors">
+              For Capital Providers
+            </a>
+           
           </nav>
 
-          {/* Action CTAs & Wallet */}
+          {/* Header Action CTA */}
           <div className="flex items-center gap-3">
-            {wallet.isConnected ? (
-              <button
-                type="button"
-                onClick={() => setShowWalletModal(true)}
-                className="flex items-center gap-2 rounded-full neo-border bg-[#22d3ee] px-3.5 py-1.5 font-syne text-xs font-bold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5"
+            {hasToken || isVerified ? (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-1.5 neo-border bg-[#a8ff3e] px-5 py-2 font-syne text-xs sm:text-sm font-bold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
               >
-                <span className="h-2 w-2 rounded-full bg-black" />
-                <span>
-                  {wallet.address?.substring(0, 6)}...{wallet.address?.substring(wallet.address.length - 4)}
-                </span>
-              </button>
+                <span>Dashboard</span>
+                <span>→</span>
+              </Link>
             ) : (
-              <button
-                type="button"
-                onClick={() => setShowWalletModal(true)}
-                className="rounded-full neo-border bg-[#a8ff3e] px-4 py-2 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
+              <Link
+                to="/get-started"
+                className="inline-flex items-center gap-1.5 neo-border bg-[#6B46C1] px-5 py-2 font-syne text-xs sm:text-sm font-medium text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
               >
-                Connect Wallet
-              </button>
+                <span>Get started</span>
+                <span>→</span>
+              </Link>
             )}
-
-            <Link
-              to="/dashboard"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-full neo-border bg-[#6B46C1] px-4 py-2 font-syne text-xs font-bold text-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
-            >
-              <span>Launch App</span>
-              <span>→</span>
-            </Link>
           </div>
         </div>
       </header>
 
-      {/* ── Hero Section ── */}
-      <section className="relative overflow-hidden py-16 sm:py-24 px-4 sm:px-8">
+      {/* ── 2. HERO SECTION ── */}
+      <section className="relative overflow-hidden py-16 sm:py-24 px-4 sm:px-8 bg-[#f7f7f7]">
         <div className="mx-auto max-w-5xl text-center space-y-8 relative z-10">
-          {/* Decorative Stars */}
           <RailStar className="absolute top-0 left-4 sm:left-12 h-8 w-8 animate-bounce opacity-80" />
           <RailStar className="absolute bottom-4 right-4 sm:right-16 h-10 w-10 rotate-45 opacity-80" />
 
-          {/* Pill Badge */}
-          <div className="inline-flex items-center gap-2 rounded-full neo-border bg-white px-4 py-1.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#a8ff3e] neo-border" />
-            <span className="font-syne text-xs font-extrabold uppercase tracking-wider text-black">
-              Bitcoin-Native Receivable Financing Rail
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2   bg-white px-4 py-1.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
+            <span className="h-2.5 w-2.5  bg-[#a8ff3e] neo-border" />
+            <span className="font-syne text-xs font-medium uppercase tracking-wider text-black">
+              Bitcoin-Native Receivables Financing Rail
             </span>
           </div>
 
-          {/* Main Title */}
-          <h1 className="font-syne text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-black leading-[1.05]">
-            Unlock Working Capital with <span className="text-[#6B46C1] underline decoration-[#a8ff3e] decoration-wavy">sBTC Liquidity</span>
+          {/* Title */}
+          <h1 className="font-syne text-2xl sm:text-4xl md:text-5xl font-medium tracking-tight text-black leading-[1.05]">
+            Bridging Real-World <br/> Receivables to <span className="text-[#6B46C1] underline decoration-[#a8ff3e] decoration-wavy">Bitcoin Capital</span>.
           </h1>
 
-          {/* Subtitle */}
-          <p className="mx-auto max-w-2xl font-syne text-base sm:text-xl font-semibold text-gray-700 leading-relaxed">
-            Connect verified real-world trade receivables directly to Bitcoin holders. Execute trust-minimized capital settlement powered by Stacks testnet Clarity smart contracts.
+          {/* Subtitle per UI Flow */}
+          <p className="mx-auto max-w-3xl font-syne text-base sm:text-xl font-medium text-gray-700 leading-relaxed">
+            FlowFi-BTC connects verified business receivables with Bitcoin capital, enabling transparent, programmable financing and settlement on Stacks.
           </p>
 
-          {/* CTA Buttons */}
+          {/* Dual Main CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
+              to="/marketplace"
+              className=" neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-base font-medium text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5"
+            >
+              Explore Receivables →
+            </Link>
+
+            <Link
               to="/submit-receivable"
-              className="rounded-full neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-base font-extrabold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5"
+              className=" neo-border bg-[#6B46C1] text-white px-8 py-4 font-syne text-base font-medium shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5"
             >
-              Submit Receivable →
-            </Link>
-
-            <Link
-              to="/history"
-              className="rounded-full neo-border bg-white px-8 py-4 font-syne text-base font-extrabold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5"
-            >
-              🔍 View Pilot Transparency
-            </Link>
-
-            <Link
-              to="/dashboard"
-              className="rounded-full neo-border bg-[#c4b5fd] px-8 py-4 font-syne text-base font-extrabold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5"
-            >
-              Enter Dashboard
+              Submit a Receivable →
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Key Metrics Bar ── */}
-      <section className="border-y-[3px] border-black bg-white py-8 px-4 sm:px-8">
-        <div className="mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div className="space-y-1 border-r-2 border-black/10 last:border-r-0">
-            <div className="font-syne text-3xl sm:text-4xl font-black text-black">$2.4M+</div>
-            <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500 font-syne">
-              Receivables Submitted
-            </div>
+      {/* ── 3. TRUST / PROTOCOL STRIP (Built on Bitcoin) ── */}
+      <section className="border-y-[3px] border-black bg-white py-10 px-4 sm:px-8">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="text-center">
+            <span className="font-syne text-xs font-medium uppercase tracking-wider text-gray-500">
+              Powered by Bitcoin • Built on Stacks
+            </span>
           </div>
 
-          <div className="space-y-1 border-r-2 border-black/10 last:border-r-0">
-            <div className="font-syne text-3xl sm:text-4xl font-black text-[#6B46C1]">34.5 sBTC</div>
-            <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500 font-syne">
-              Capital Deployed
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            <div className="neo-border  bg-[#f7f7f7] p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] space-y-1">
+              <div className="font-syne text-lg font-medium text-black">Bitcoin</div>
+              <div className="text-xs font-medium text-gray-600">Security & Liquidity</div>
             </div>
-          </div>
 
-          <div className="space-y-1 border-r-2 border-black/10 last:border-r-0">
-            <div className="font-syne text-3xl sm:text-4xl font-black text-black">9.8% APY</div>
-            <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500 font-syne">
-              Avg. Capital Provider Yield
+            <div className="neo-border  bg-[#a8ff3e]/20 p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] space-y-1">
+              <div className="font-syne text-lg font-medium text-[#6B46C1]">sBTC</div>
+              <div className="text-xs font-medium text-gray-600">Capital Movement</div>
             </div>
-          </div>
 
-          <div className="space-y-1">
-            <div className="font-syne text-3xl sm:text-4xl font-black text-black">Instant</div>
-            <div className="text-xs font-extrabold uppercase tracking-wider text-gray-500 font-syne">
-              Clarity On-Chain Settlement
+            <div className="neo-border  bg-[#22d3ee]/20 p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] space-y-1">
+              <div className="font-syne text-lg font-medium text-black">Stacks</div>
+              <div className="text-xs font-medium text-gray-600">Programmable Settlement</div>
+            </div>
+
+            <div className="neo-border  bg-[#fef08a]/40 p-5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] space-y-1">
+              <div className="font-syne text-lg font-medium text-black">On-Chain Records</div>
+              <div className="text-xs font-medium text-gray-600">Transparent Lifecycle</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── How It Works (4 Steps per UI Flow) ── */}
+      {/* ── 4. TWO-SIDED MODEL SECTION ── */}
       <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-3">
-          <span className="font-syne text-xs font-extrabold uppercase tracking-wider text-[#6B46C1] bg-[#c4b5fd]/30 px-3 py-1 rounded-full neo-border">
-            End-To-End Settlement Flow
-          </span>
-          <h2 className="font-syne text-3xl sm:text-5xl font-black text-black tracking-tight">
-            How sBTC Capital Rail Works
+        
+          <h2 className="font-syne text-3xl sm:text-5xl font-medium text-black tracking-tight">
+            Built for Businesses & Capital Providers
           </h2>
-          <p className="text-gray-600 font-semibold max-w-xl mx-auto text-sm sm:text-base">
-            From business invoice registration to on-chain verification and automated Bitcoin capital settlement.
+          <p className="text-gray-600 font-medium max-w-xl mx-auto text-sm sm:text-base">
+            Connecting real-world corporate invoices directly with decentralized sBTC liquidity.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Step 1 */}
-          <div className="neo-border-thick bg-white rounded-[24px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 relative flex flex-col justify-between">
-            <div>
-              <div className="h-10 w-10 rounded-full bg-[#ffb6b9] neo-border flex items-center justify-center font-syne font-black text-black text-lg mb-4">
-                01
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* For Businesses Column */}
+          <div id="for-businesses" className="neo-border-thick bg-white  p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="inline-block  neo-border bg-[#a8ff3e] px-3.5 py-1 text-xs font-medium uppercase text-black">
+                For Businesses
               </div>
-              <h3 className="font-syne font-extrabold text-black text-lg">Submit Receivable</h3>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed mt-2">
-                Business completes a 5-step registration specifying invoice amount, due blocks, counterparty details, and document hashes.
+              <h3 className="font-syne text-2xl sm:text-3xl font-medium text-black">
+                Accelerate Working Capital with Verified Invoices
+              </h3>
+              <p className="text-sm font-medium text-gray-600 leading-relaxed">
+                Transform pending accounts receivable into instant sBTC liquidity without waiting 30–90 days for client payment.
               </p>
+
+              <ul className="space-y-3 pt-2 font-syne text-sm font-medium text-gray-800">
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Submit verified trade receivables</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Request programmable working capital</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Track financing status through settlement</span>
+                </li>
+              </ul>
             </div>
-            <Link
-              to="/submit-receivable"
-              className="inline-block pt-3 font-syne text-xs font-extrabold text-[#6B46C1] hover:underline"
-            >
-              Start Submission →
-            </Link>
+
+            <div>
+              <Link
+                to="/get-started"
+                className="w-full inline-flex items-center justify-center  neo-border bg-[#a8ff3e] py-4 text-sm font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                I'm a Business →
+              </Link>
+            </div>
           </div>
 
-          {/* Step 2 */}
-          <div className="neo-border-thick bg-white rounded-[24px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 relative flex flex-col justify-between">
-            <div>
-              <div className="h-10 w-10 rounded-full bg-[#a8ff3e] neo-border flex items-center justify-center font-syne font-black text-black text-lg mb-4">
-                02
+          {/* For Capital Providers Column */}
+          <div id="for-capital-providers" className="neo-border-thick bg-[#6B46C1] text-white  p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
+              <div className="inline-block  neo-border bg-[#c4b5fd] text-black px-3.5 py-1 text-xs font-medium uppercase">
+                For Capital Providers
               </div>
-              <h3 className="font-syne font-extrabold text-black text-lg">Verification & Attestation</h3>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed mt-2">
-                Independent reviewer nodes verify invoice authenticity, trade history, and store SHA-256 document attestations off-chain.
+              <h3 className="font-syne text-2xl sm:text-3xl font-medium text-white">
+                Fund Real-World Trade Receivables with sBTC
+              </h3>
+              <p className="text-sm font-medium text-purple-100 leading-relaxed">
+                Deploy sBTC into transparent, short-term trade finance backed by verified corporate invoices and on-chain settlement.
               </p>
-            </div>
-            <Link
-              to="/verification"
-              className="inline-block pt-3 font-syne text-xs font-extrabold text-[#6B46C1] hover:underline"
-            >
-              Check Attestations →
-            </Link>
-          </div>
 
-          {/* Step 3 */}
-          <div className="neo-border-thick bg-white rounded-[24px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 relative flex flex-col justify-between">
-            <div>
-              <div className="h-10 w-10 rounded-full bg-[#22d3ee] neo-border flex items-center justify-center font-syne font-black text-black text-lg mb-4">
-                03
-              </div>
-              <h3 className="font-syne font-extrabold text-black text-lg">sBTC Capital Funding</h3>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed mt-2">
-                Capital providers review verified receivables and fund sBTC liquidity directly via Stacks Clarity smart contracts.
-              </p>
+              <ul className="space-y-3 pt-2 font-syne text-sm font-medium text-white">
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] text-black neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Discover verified financing opportunities</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] text-black neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Fund receivables directly with sBTC</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="h-6 w-6  bg-[#a8ff3e] text-black neo-border flex items-center justify-center text-xs font-medium">✓</span>
+                  <span>Track funding through maturity & settlement</span>
+                </li>
+              </ul>
             </div>
-            <Link
-              to="/funding"
-              className="inline-block pt-3 font-syne text-xs font-extrabold text-[#6B46C1] hover:underline"
-            >
-              Explore Active Funding →
-            </Link>
-          </div>
 
-          {/* Step 4 */}
-          <div className="neo-border-thick bg-white rounded-[24px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 relative flex flex-col justify-between">
             <div>
-              <div className="h-10 w-10 rounded-full bg-[#fef08a] neo-border flex items-center justify-center font-syne font-black text-black text-lg mb-4">
-                04
-              </div>
-              <h3 className="font-syne font-extrabold text-black text-lg">Settlement & Audit</h3>
-              <p className="text-xs font-semibold text-gray-600 leading-relaxed mt-2">
-                Debtor pays invoice upon maturity, smart contract releases sBTC plus yield to provider, recording full lifecycle on Stacks Explorer.
-              </p>
+              <Link
+                to="/get-started"
+                className="w-full inline-flex items-center justify-center  neo-border bg-[#a8ff3e] py-4 text-sm font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                I'm a Capital Provider →
+              </Link>
             </div>
-            <Link
-              to="/history"
-              className="inline-block pt-3 font-syne text-xs font-extrabold text-[#6B46C1] hover:underline"
-            >
-              View Public Ledger →
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Live Pilot Receivable Showcase ── */}
-      <section className="py-16 px-4 sm:px-8 bg-[#6B46C1] text-white">
-        <div className="mx-auto max-w-6xl space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <span className="font-syne text-xs font-extrabold uppercase tracking-wider text-[#a8ff3e] bg-black/40 px-3 py-1 rounded-full neo-border">
-                Live Testnet Receivable
-              </span>
-              <h2 className="font-syne text-3xl sm:text-4xl font-black text-white mt-2">
-                Featured Pilot Receivable #01
-              </h2>
-            </div>
-            <Link
-              to="/receivable/1"
-              className="rounded-full neo-border bg-[#a8ff3e] px-6 py-2.5 font-bold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform self-start md:self-auto"
-            >
-              Inspect On-Chain Contract →
-            </Link>
+      {/* ── 5. HOW IT WORKS (4 Steps) ── */}
+      <section id="how-it-works" className="py-20 px-4 sm:px-8 border-t-[3px] border-black bg-white">
+        <div className="max-w-7xl mx-auto space-y-12">
+          <div className="text-center space-y-3">
+           
+            <h2 className="font-syne text-3xl sm:text-5xl font-medium text-black tracking-tight">
+              How FlowFi-BTC Works
+            </h2>
+            <p className="text-gray-600 font-medium max-w-xl mx-auto text-sm sm:text-base">
+              The entire trade financing journey explained in 10 seconds.
+            </p>
           </div>
 
-          <div className="neo-border-thick bg-white text-black rounded-[28px] p-6 sm:p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b-2 border-black pb-4">
-                <div>
-                  <h3 className="font-syne font-black text-xl text-black">
-                    {MOCK_RECEIVABLE.borrowerName}
-                  </h3>
-                  <p className="text-xs font-syne font-bold text-gray-600 mt-0.5">
-                    Invoice Ref: {MOCK_RECEIVABLE.invoiceNumber} • Counterparty: {MOCK_RECEIVABLE.counterparty}
-                  </p>
-                </div>
-                <span className="rounded-full neo-border bg-[#c4b5fd] px-3 py-1 font-syne text-xs font-extrabold text-black">
-                  STATUS: FUNDED (1)
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 font-syne text-xs">
-                <div className="bg-[#f7f7f7] p-4 rounded-[18px] neo-border">
-                  <span className="text-gray-500 block mb-1 font-bold">RECEIVABLE AMOUNT</span>
-                  <span className="text-black font-black text-2xl">2.50 sBTC</span>
-                  <span className="text-gray-600 block text-[11px] font-bold">
-                    ($162,500 USD equivalent)
-                  </span>
-                </div>
-
-                <div className="bg-[#f7f7f7] p-4 rounded-[18px] neo-border">
-                  <span className="text-gray-500 block mb-1 font-bold">DUE BLOCK TARGET</span>
-                  <span className="text-black font-black text-2xl">#148,920</span>
-                  <span className="text-gray-600 block text-[11px] font-bold">
-                    Est. Oct 14, 2026
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-col justify-between bg-[#f7f7f7] p-6 rounded-[24px] neo-border space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 01 Submit */}
+            <div className="neo-border-thick bg-[#f7f7f7]  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 flex flex-col justify-between">
               <div>
-                <span className="text-xs font-syne font-bold text-gray-500 uppercase block mb-1">
-                  On-Chain Action
-                </span>
-                <h4 className="font-syne font-extrabold text-black text-base">
-                  Execute Funding or View Operations
-                </h4>
-                <p className="text-xs font-semibold text-gray-600 mt-1">
-                  Testnet users can trigger state transitions between Registered, Funded, Repaid, and Defaulted.
+                <div className="h-10 w-10  bg-[#ffb6b9] neo-border flex items-center justify-center font-syne font-medium text-black text-lg mb-4">
+                  01
+                </div>
+                <h3 className="font-syne font-medium text-black text-xl">Submit</h3>
+                <p className="text-xs font-medium text-gray-700 leading-relaxed mt-2">
+                  Business submits a receivable with invoice details, due block target, counterparty info, and SHA-256 document hash.
                 </p>
               </div>
+              <Link
+                to="/submit-receivable"
+                className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
+              >
+                Submit Receivable →
+              </Link>
+            </div>
 
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setIsFundingModalOpen(true)}
-                  className="w-full rounded-full neo-border bg-[#a8ff3e] py-3 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
-                >
-                  ⚡ Trigger Funding Modal
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate('/verification')}
-                  className="w-full rounded-full neo-border bg-white py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
-                >
-                  🔍 View Document Attestations
-                </button>
+            {/* 02 Verify */}
+            <div className="neo-border-thick bg-[#f7f7f7]  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="h-10 w-10  bg-[#a8ff3e] neo-border flex items-center justify-center font-syne font-medium text-black text-lg mb-4">
+                  02
+                </div>
+                <h3 className="font-syne font-medium text-black text-xl">Verify</h3>
+                <p className="text-xs font-medium text-gray-700 leading-relaxed mt-2">
+                  Business identity and supporting receivable evidence are reviewed and cryptographic attestations stored off-chain.
+                </p>
+              </div>
+              <Link
+                to="/verification"
+                className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
+              >
+                View Verification →
+              </Link>
+            </div>
+
+            {/* 03 Fund */}
+            <div className="neo-border-thick bg-[#f7f7f7]  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="h-10 w-10  bg-[#22d3ee] neo-border flex items-center justify-center font-syne font-medium text-black text-lg mb-4">
+                  03
+                </div>
+                <h3 className="font-syne font-medium text-black text-xl">Fund</h3>
+                <p className="text-xs font-medium text-gray-700 leading-relaxed mt-2">
+                  Capital provider funds the verified receivable with sBTC directly through Stacks Clarity smart contracts.
+                </p>
+              </div>
+              <Link
+                to="/funding"
+                className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
+              >
+                Explore Funding →
+              </Link>
+            </div>
+
+            {/* 04 Settle */}
+            <div className="neo-border-thick bg-[#f7f7f7]  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4 flex flex-col justify-between">
+              <div>
+                <div className="h-10 w-10  bg-[#fef08a] neo-border flex items-center justify-center font-syne font-medium text-black text-lg mb-4">
+                  04
+                </div>
+                <h3 className="font-syne font-medium text-black text-xl">Settle</h3>
+                <p className="text-xs font-medium text-gray-700 leading-relaxed mt-2">
+                  Repayment or default is recorded transparently on-chain, releasing yield to provider and updating public logs.
+                </p>
+              </div>
+              <Link
+                to="/history"
+                className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
+              >
+                Inspect Ledger →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 6. VERIFICATION CONCEPT SECTION ── */}
+      <section className="py-20 px-4 sm:px-8 max-w-6xl mx-auto space-y-10">
+        <div className="neo-border-thick bg-[#22d3ee]/10  p-8 sm:p-12 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-black grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="space-y-6">
+            <span className="font-syne text-xs font-medium uppercase tracking-wider text-black bg-[#22d3ee] px-3 py-1  neo-border">
+              Trust & Transparency Framework
+            </span>
+            <h2 className="font-syne text-3xl sm:text-4xl font-medium text-black">
+              Verified Receivables
+            </h2>
+            <p className="font-syne text-sm sm:text-base font-medium text-gray-700 leading-relaxed">
+              Each financing opportunity includes verification information about the business and supporting receivable evidence before it becomes eligible for funding.
+            </p>
+
+            <div className="pt-2">
+              <Link
+                to="/verification"
+                className="inline-flex items-center gap-2  neo-border bg-[#22d3ee] px-6 py-3 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                <span>Inspect Attestations & Verification Log</span>
+                <span>→</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="neo-border bg-white  p-6 shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] space-y-4">
+            <h3 className="font-syne font-medium text-lg border-b-2 border-black pb-3 text-black">
+              Verification Checklist
+            </h3>
+
+            <div className="space-y-3 font-syne text-xs font-medium">
+              <div className="flex items-center gap-3 bg-[#f7f7f7] p-3 rounded-xl neo-border">
+                <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium text-black">✓</span>
+                <span className="text-gray-800">Business information reviewed</span>
+              </div>
+
+              <div className="flex items-center gap-3 bg-[#f7f7f7] p-3 rounded-xl neo-border">
+                <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium text-black">✓</span>
+                <span className="text-gray-800">Receivable evidence reviewed</span>
+              </div>
+
+              <div className="flex items-center gap-3 bg-[#f7f7f7] p-3 rounded-xl neo-border">
+                <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium text-black">✓</span>
+                <span className="text-gray-800">Cryptographic verification recorded</span>
+              </div>
+
+              <div className="flex items-center gap-3 bg-[#f7f7f7] p-3 rounded-xl neo-border">
+                <span className="h-6 w-6  bg-[#a8ff3e] neo-border flex items-center justify-center text-xs font-medium text-black">✓</span>
+                <span className="text-gray-800">On-chain financing state registered</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Public Footer ── */}
+      {/* ── 7. FUNDING MARKETPLACE PREVIEW ── */}
+      <section id="marketplace" className="py-20 px-4 sm:px-8 bg-[#6B46C1] text-white">
+        <div className="mx-auto max-w-7xl space-y-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+            
+              <h2 className="font-syne text-3xl sm:text-5xl font-medium text-white">
+                Explore Funding Opportunities
+              </h2>
+              <p className="text-purple-200 text-sm font-medium max-w-lg">
+                Discover active receivables verified and ready for sBTC funding on Stacks testnet.
+              </p>
+            </div>
+
+            <Link
+              to="/funding"
+              className=" neo-border bg-[#a8ff3e] px-6 py-3 font-syne text-xs font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform self-start md:self-auto"
+            >
+              Explore All Receivables →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1 */}
+            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b-2 border-black pb-3">
+                  <div>
+                    <h3 className="font-syne font-medium text-base">ABC Logistics Inc.</h3>
+                    <p className="text-[11px] font-medium text-gray-500">Receivable #CR-001</p>
+                  </div>
+                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
+                    ✓ Verified
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
+                    <span className="font-medium text-black text-sm">$10,000</span>
+                    <span className="text-[10px] text-gray-500 block">0.15 sBTC</span>
+                  </div>
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">TERM</span>
+                    <span className="font-medium text-black text-sm">45 Days</span>
+                    <span className="text-[10px] text-gray-500 block">Due Block #151k</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium font-syne">
+                    <span>Funding Progress</span>
+                    <span className="text-[#6B46C1]">70% Funded</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
+                    <div className="h-full bg-[#a8ff3e] w-[70%]" />
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFundingModalOpen(true)}
+                className="w-full  neo-border bg-[#a8ff3e] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                View Opportunity
+              </button>
+            </div>
+
+            {/* Card 2 - MOCK_RECEIVABLE */}
+            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b-2 border-black pb-3">
+                  <div>
+                    <h3 className="font-syne font-medium text-base truncate max-w-[170px]">
+                      Apex Supply Chain Ltd
+                    </h3>
+                    <p className="text-[11px] font-medium text-gray-500">
+                      Invoice #INV-2041
+                    </p>
+                  </div>
+                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
+                    ✓ Verified
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
+                    <span className="font-medium text-black text-sm">2.50 sBTC</span>
+                    <span className="text-[10px] text-gray-500 block">$162,500 USD</span>
+                  </div>
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">DUE TARGET</span>
+                    <span className="font-medium text-black text-sm">#148,920</span>
+                    <span className="text-[10px] text-gray-500 block">Oct 14, 2026</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium font-syne">
+                    <span>Funding Progress</span>
+                    <span className="text-emerald-600 font-medium">100% Funded</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
+                    <div className="h-full bg-[#22d3ee] w-[100%]" />
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                to="/receivable/1"
+                className="w-full text-center inline-block  neo-border bg-[#c4b5fd] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                View Opportunity
+              </Link>
+            </div>
+
+            {/* Card 3 */}
+            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b-2 border-black pb-3">
+                  <div>
+                    <h3 className="font-syne font-medium text-base">Apex Freight Supply</h3>
+                    <p className="text-[11px] font-medium text-gray-500">Receivable #CR-003</p>
+                  </div>
+                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
+                    ✓ Verified
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
+                    <span className="font-medium text-black text-sm">$78,000</span>
+                    <span className="text-[10px] text-gray-500 block">1.20 sBTC</span>
+                  </div>
+                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
+                    <span className="text-gray-500 block text-[10px] font-medium">TERM</span>
+                    <span className="font-medium text-black text-sm">30 Days</span>
+                    <span className="text-[10px] text-gray-500 block">Due Block #153k</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-medium font-syne">
+                    <span>Funding Progress</span>
+                    <span className="text-[#6B46C1]">40% Funded</span>
+                  </div>
+                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
+                    <div className="h-full bg-[#a8ff3e] w-[40%]" />
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                to="/funding"
+                className="w-full text-center inline-block  neo-border bg-[#a8ff3e] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              >
+                View Opportunity
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 8. EXPERIMENTAL PILOT / RISK DISCLOSURE ── */}
+      <section className="py-16 px-4 sm:px-8 bg-white border-t-[3px] border-black">
+        <div className="mx-auto max-w-5xl text-center space-y-6">
+         
+
+          <h2 className="font-syne text-2xl sm:text-4xl font-medium text-black">
+            Pilot Status & Risk Disclosure
+          </h2>
+
+          <p className="mx-auto max-w-3xl font-syne text-sm sm:text-base font-medium text-gray-700 leading-relaxed">
+            FlowFi-BTC is currently an experimental financing pilot. Initial transactions are intentionally limited in size while the financing mechanism, verification process, and settlement contracts are validated.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 font-syne text-xs font-medium">
+            <Link
+              to="/history"
+              className=" neo-border bg-[#f7f7f7] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+            >
+              View Pilot Transparency Log →
+            </Link>
+
+            <Link
+              to="/cascade-risk"
+              className=" neo-border bg-[#ffb6b9] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+            >
+              Read Risk & Security Framework →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 9. OPEN SOURCE & DOCS SECTION ── */}
+      <section className="py-16 px-4 sm:px-8 bg-[#f7f7f7] border-t-[3px] border-black">
+        <div className="mx-auto max-w-4xl text-center space-y-6">
+          <h2 className="font-syne text-2xl sm:text-3xl font-medium text-black">
+            Open Source & Auditable
+          </h2>
+          <p className="font-syne text-sm font-medium text-gray-600 max-w-xl mx-auto">
+            Core financing contracts are open source and independently inspectable.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
+            <a
+              href="https://github.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className=" neo-border bg-white px-6 py-2.5 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+            >
+              GitHub Repository
+            </a>
+            <Link
+              to="/api-docs"
+              className=" neo-border bg-[#c4b5fd] px-6 py-2.5 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+            >
+              Documentation & API →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── 10. PUBLIC FOOTER ── */}
       <footer className="border-t-[3px] border-black bg-white py-12 px-4 sm:px-8">
         <div className="mx-auto max-w-7xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 font-syne">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded neo-border bg-[#a8ff3e] flex items-center justify-center font-bold text-xs">
-                Flow
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded neo-border neo-shadow-btn overflow-hidden bg-[#a8ff3e]">
+                <img
+                  src="https://avatars.githubusercontent.com/u/296891105?s=200&v=4"
+                  alt="FlowFi"
+                  className="h-full w-full object-cover"
+                />
               </div>
-              <span className="font-syne font-extrabold text-lg text-black">FlowFi-BTC</span>
+              <span className="font-syne font-medium text-lg text-black">FlowFi-BTC</span>
             </div>
-            <p className="text-xs font-semibold text-gray-600 leading-relaxed">
-              Bitcoin-native capital settlement rail connecting verified trade receivables to sBTC liquidity pools.
+            <p className="text-xs font-medium text-gray-600 leading-relaxed">
+              FlowFi-BTC connects verified business trade receivables with Bitcoin capital for transparent, programmable financing and settlement on Stacks.
             </p>
           </div>
 
           <div>
-            <h4 className="font-syne font-extrabold text-sm text-black mb-3">Core Pages</h4>
-            <ul className="space-y-2 text-xs font-bold text-gray-600 font-syne">
+            <h4 className="font-syne font-medium text-sm text-black mb-3">Core Pages</h4>
+            <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
               <li><Link to="/dashboard" className="hover:text-black">Dashboard</Link></li>
               <li><Link to="/submit-receivable" className="hover:text-black">Submit Receivable</Link></li>
               <li><Link to="/funding" className="hover:text-black">Active Funding</Link></li>
-              <li><Link to="/verification" className="hover:text-black">Verification</Link></li>
+              <li><Link to="/verification" className="hover:text-black">Verification Log</Link></li>
               <li><Link to="/history" className="hover:text-black">Transparency Log</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-syne font-extrabold text-sm text-black mb-3">Risk & Protocols</h4>
-            <ul className="space-y-2 text-xs font-bold text-gray-600 font-syne">
-              <li><Link to="/cascade-risk" className="hover:text-black">Cascade Risk Engine</Link></li>
-              <li><Link to="/liquidity" className="hover:text-black">Liquidity Pools</Link></li>
-              <li><Link to="/protocols" className="hover:text-black">Tracked Protocols</Link></li>
-              <li><Link to="/api-docs" className="hover:text-black">API Documentation</Link></li>
+            <h4 className="font-syne font-medium text-sm text-black mb-3">Resources</h4>
+            <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
+              <li><Link to="/cascade-risk" className="hover:text-black">Github</Link></li>
+              <li><Link to="/liquidity" className="hover:text-black">Contracts</Link></li>
+           
             </ul>
           </div>
 
           <div>
-            <h4 className="font-syne font-extrabold text-sm text-black mb-3">Stacks Testnet</h4>
-            <div className="space-y-2 text-xs font-syne font-semibold text-gray-600">
-              <p>Contract: <span className="text-black font-bold">sbtc-capital-rail-v2</span></p>
-              <p>Network: <span className="text-black font-bold">Stacks Testnet</span></p>
+            <h4 className="font-syne font-medium text-sm text-black mb-3">Stacks Testnet</h4>
+            <div className="space-y-2 text-xs font-syne font-medium text-gray-600">
+              <p>Contract: <span className="text-black font-medium">sbtc-capital-rail-v2</span></p>
+              <p>Network: <span className="text-black font-medium">Stacks Testnet</span></p>
               <div className="pt-2">
-                <span className="inline-block rounded-full neo-border bg-[#a8ff3e] px-3 py-1 text-[10px] font-extrabold text-black">
+                <span className="inline-block  neo-border bg-[#a8ff3e] px-3 py-1 text-[10px] font-medium text-black">
                   ● Clarity Smart Contract Active
                 </span>
               </div>
@@ -421,8 +689,8 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="mx-auto max-w-7xl mt-8 pt-6 border-t-2 border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 font-syne">
-          <p>© 2026 sBTC Capital Rail / FlowFi. Open source MIT protocol.</p>
+        <div className="mx-auto max-w-7xl mt-8 pt-6 border-t-2 border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-500 font-syne">
+          <p>© 2026 FlowFi-BTC / FlowFi-BTC. Open source MIT protocol.</p>
           <div className="flex items-center gap-4">
             <Link to="/settings" className="hover:text-black">Settings</Link>
             <span>•</span>
@@ -434,83 +702,37 @@ export const LandingPage: React.FC = () => {
       {/* Wallet Connection Modal */}
       {showWalletModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-syne">
-          <div className="w-full max-w-md rounded-[24px] neo-border-thick bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+          <div className="w-full max-w-md  neo-border-thick bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center justify-between border-b-2 border-black pb-4">
-              <h3 className="font-extrabold text-black text-lg">Connect Stacks Wallet</h3>
+              <h3 className="font-medium text-black text-lg">Connect Stacks Wallet</h3>
               <button
+                type="button"
                 onClick={() => setShowWalletModal(false)}
-                className="h-8 w-8 rounded-full neo-border bg-[#f7f7f7] text-black font-bold flex items-center justify-center hover:bg-gray-200"
+                className="h-8 w-8  neo-border bg-[#f7f7f7] text-black font-medium flex items-center justify-center hover:bg-gray-200"
               >
                 ✕
               </button>
             </div>
 
-            <div className="mt-5 space-y-3">
-              <button
-                onClick={() => {
-                  connect('ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG');
-                  setShowWalletModal(false);
-                }}
-                className="flex w-full items-center justify-between rounded-[18px] neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#a8ff3e] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-orange-400 neo-border flex items-center justify-center font-syne font-bold text-black">
-                    LT
-                  </div>
-                  <div>
-                    <div className="font-extrabold text-black">Leather Wallet</div>
-                    <div className="text-xs text-gray-600 font-syne font-bold">Stacks & Bitcoin Native</div>
-                  </div>
-                </div>
-                <span className="font-syne text-xs font-extrabold text-black">Connect →</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  connect('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
-                  setShowWalletModal(false);
-                }}
-                className="flex w-full items-center justify-between rounded-[18px] neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#c4b5fd] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-purple-400 neo-border flex items-center justify-center font-syne font-bold text-black">
-                    XV
-                  </div>
-                  <div>
-                    <div className="font-extrabold text-black">Xverse Wallet</div>
-                    <div className="text-xs text-gray-600 font-syne font-bold">Bitcoin Web3 Wallet</div>
-                  </div>
-                </div>
-                <span className="font-syne text-xs font-extrabold text-black">Connect →</span>
-              </button>
-
-              {wallet.isConnected && (
-                <div className="pt-3 border-t-2 border-black">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      disconnect();
-                      setShowWalletModal(false);
-                    }}
-                    className="flex w-full items-center justify-center rounded-full neo-border bg-[#ffb6b9] px-4 py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9]"
-                  >
-                    Disconnect Wallet
-                  </button>
-                </div>
-              )}
-            </div>
+           
           </div>
         </div>
       )}
 
       {/* Funding Modal */}
       <FundingModal
-        receivable={MOCK_RECEIVABLE}
+        receivable={{
+          id: 'rec_112233',
+          title: 'Invoice INV-2041',
+          invoiceNumber: 'INV-2041',
+          amountUsd: '45000',
+          businessName: 'Apex Supply Chain Ltd',
+        }}
         isOpen={isFundingModalOpen}
         onClose={() => setIsFundingModalOpen(false)}
         onConfirmFund={() => {
           setIsFundingModalOpen(false);
-          navigate('/receivable/1');
+          navigate('/receivable/rec_112233');
         }}
       />
     </div>

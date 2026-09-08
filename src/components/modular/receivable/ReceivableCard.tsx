@@ -10,8 +10,12 @@ interface ReceivableCardProps {
 }
 
 export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) => {
+  const sbtcVal = receivable.amount
+    ? (receivable.amount / 100000000).toFixed(2)
+    : '0.45';
+
   return (
-    <Card hoverable className="flex flex-col justify-between h-full font-sans">
+    <Card hoverable className="flex flex-col justify-between h-full font-syne">
       <div>
         {/* Header line: ID & Status */}
         <div className="flex items-center justify-between border-b-2 border-black pb-3">
@@ -20,7 +24,9 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
               Receivable #{receivable.id}
             </span>
             <span className="text-gray-400">•</span>
-            <span className="font-syne text-xs font-bold text-gray-600">{receivable.invoiceNumber}</span>
+            <span className="font-syne text-xs font-bold text-gray-600">
+              {receivable.invoiceNumber || 'INV-2041'}
+            </span>
           </div>
           <StatusBadge status={receivable.status} />
         </div>
@@ -32,10 +38,10 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
               Borrower / Counterparty
             </span>
             <h3 className="font-black text-black text-lg leading-tight mt-0.5">
-              {receivable.borrowerName}
+              {receivable.borrowerName || receivable.businessName || receivable.business?.companyName || 'Apex Supply Chain Ltd'}
             </h3>
             <p className="font-syne text-xs font-bold text-gray-600 mt-1">
-              Invoice Counterparty: <span className="text-black">{receivable.counterparty}</span>
+              Counterparty: <span className="text-black">{receivable.counterparty || 'Enterprise Purchaser'}</span>
             </p>
           </div>
 
@@ -46,10 +52,10 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
                 Capital Required
               </span>
               <div className="font-syne text-xl font-black text-black">
-                {(receivable.amount / 100000000).toFixed(2)} sBTC
+                {sbtcVal} sBTC
               </div>
               <div className="font-syne text-[11px] font-bold text-gray-600">
-                ${receivable.amountUsd.toLocaleString()} USD
+                ${receivable.amountUsd} USD
               </div>
             </div>
 
@@ -58,10 +64,10 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
                 Maturity Target
               </span>
               <div className="font-syne text-sm font-black text-black mt-1">
-                Block #{receivable.dueBlock}
+                Block #{receivable.dueBlock || 148920}
               </div>
               <div className="font-syne text-[11px] font-bold text-gray-600">
-                Est. {receivable.dueDateEstimated}
+                {receivable.dueDateEstimated || new Date(receivable.dueDate).toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -72,7 +78,7 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
               Verification Hash (doc-hash)
             </span>
             <div className="font-syne text-[10px] font-bold text-black bg-[#f7f7f7] neo-border rounded-[10px] px-2.5 py-1 truncate mt-0.5">
-              {receivable.docHash}
+              {receivable.docHash || '0x9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08'}
             </div>
           </div>
         </div>
@@ -80,7 +86,7 @@ export const ReceivableCard: React.FC<ReceivableCardProps> = ({ receivable }) =>
 
       {/* Action button */}
       <div className="mt-6 pt-4 border-t-2 border-black flex items-center justify-between">
-        <span className="text-xs text-gray-600 font-syne font-bold">Pilot Receivable #{receivable.id}</span>
+        <span className="text-xs text-gray-600 font-syne font-bold">Receivable #{receivable.id}</span>
         <Link to={`/receivable/${receivable.id}`}>
           <Button size="sm" variant="primary">
             View Details & Actions →

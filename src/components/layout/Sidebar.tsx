@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { useWallet } from '../../hooks/useWallet';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
 
 interface NavConfig {
   path: string;
@@ -8,7 +8,8 @@ interface NavConfig {
   icon: React.ReactNode;
 }
 
-const railNavItems: NavConfig[] = [
+
+const investorNavItems: NavConfig[] = [
   {
     path: '/dashboard',
     label: 'Overview',
@@ -19,17 +20,17 @@ const railNavItems: NavConfig[] = [
     ),
   },
   {
-    path: '/receivable',
-    label: 'Receivable',
+    path: '/funding',
+    label: 'Explore Receivables',
     icon: (
       <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
     ),
   },
   {
-    path: '/funding',
-    label: 'Active Funding',
+    path: '/receivable/1',
+    label: 'My Funding',
     icon: (
       <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -38,7 +39,7 @@ const railNavItems: NavConfig[] = [
   },
   {
     path: '/history',
-    label: 'Transparency',
+    label: 'Activity',
     icon: (
       <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -46,11 +47,11 @@ const railNavItems: NavConfig[] = [
     ),
   },
   {
-    path: '/verification',
-    label: 'Verification',
+    path: '/settings',
+    label: 'Wallet',
     icon: (
       <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
       </svg>
     ),
   },
@@ -63,10 +64,50 @@ const railNavItems: NavConfig[] = [
         <circle cx="12" cy="12" r="3" />
       </svg>
     ),
-  }
+  },
 ];
 
-// --- Decorative background doodles, styled after the landing page's floating stars/squiggles ---
+const businessNavItems: NavConfig[] = [
+  {
+    path: '/dashboard',
+    label: 'Overview',
+    icon: (
+      <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+    ),
+  },
+  {
+    path: '/submit-receivable',
+    label: 'Submit Receivable',
+    icon: (
+      <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 4v16m8-8H4" />
+      </svg>
+    ),
+  },
+  {
+    path: '/receivable',
+    label: 'My Receivables',
+    icon: (
+      <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    path: '/settings',
+    label: 'Settings',
+    icon: (
+      <svg className="h-[15px] w-[15px] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ),
+  },
+];
+
+// --- Decorative background doodles ---
 const Star4Point = ({ className = '', fill = '#ffb6b9' }: { className?: string; fill?: string }) => (
   <svg viewBox="0 0 24 24" className={className}>
     <path d="M12 0L14.5 9.5L24 12L14.5 14.5L12 24L9.5 14.5L0 12L9.5 9.5L12 0Z" fill={fill} stroke="black" strokeWidth="1.5" strokeLinejoin="round" />
@@ -87,7 +128,7 @@ const SquigglyLine = ({ className = '' }: { className?: string }) => (
 );
 
 const Dot = ({ className = '', fill = '#a8ff3e' }: { className?: string; fill?: string }) => (
-  <span className={`block rounded-full border-2 border-black ${className}`} style={{ backgroundColor: fill }} />
+  <span className={`block  border-2 border-black ${className}`} style={{ backgroundColor: fill }} />
 );
 
 const SidebarDoodles = () => (
@@ -107,59 +148,74 @@ const SidebarDoodles = () => (
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
-  const { wallet, connect, disconnect } = useWallet();
+  const navigate = useNavigate();
+  const { role, wallet, connectWallet, disconnectWallet } = useUser();
   const [showWalletModal, setShowWalletModal] = useState(false);
+
+  const handleLogout = () => {
+    disconnectWallet();
+    localStorage.clear();
+    navigate('/');
+  };
+
+  const navItems = role === 'INVESTOR' || role === 'investor' ? investorNavItems : businessNavItems;
 
   return (
     <aside className="relative flex w-full flex-col overflow-hidden border-b-[3px] border-black bg-[#f7f7f7] px-3 py-5 select-none lg:fixed lg:inset-y-0 lg:w-64 lg:border-b-0 lg:border-r-[3px] lg:py-6 z-30 font-syne">
-      {/* ── Background doodles ── */}
+      {/* Background doodles */}
       <SidebarDoodles />
 
-      {/* ── Brand ── */}
-      <div className="relative z-10 flex items-center justify-between px-2 pb-6 pt-1 lg:block">
+      {/* Brand */}
+      <div className="relative z-10 flex flex-col gap-3 px-2 pb-5 pt-1">
         <div className="flex items-center gap-3">
-          {/* Logo mark */}
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded neo-border neo-shadow-btn overflow-hidden bg-[#a8ff3e]">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-tr-lg rounded-bl-lg  neo-border neo-shadow-btn overflow-hidden bg-[#a8ff3e]">
             <img src="https://avatars.githubusercontent.com/u/296891105?s=200&v=4" alt="FlowFi" className="h-full w-full object-cover" />
           </div>
 
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-[16px] tracking-tight text-black">FlowFi-BTC</span>
+              <span className="font-medium text-[16px] tracking-tight text-black">FlowFi-BTC</span>
             </div>
-            <p className="hidden text-[10px] font-bold uppercase tracking-wider text-gray-500">
-              Capital Settlement Rail
-            </p>
+         
           </div>
+        </div>
+
+        {/* Role Badge & Switcher */}
+        <div className=" w-full bg-white neo-border  p-2 px-10 my-5 flex items-center justify-between shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          <div className="flex items-center gap-1.5 truncate">
+            <span className="h-2 w-2  bg-[#a8ff3e]  shrink-0" />
+            <span className="text-[11px] font-medium text-black truncate uppercase font-semibold">
+              {role === 'INVESTOR' || role === 'investor' ? 'Capital Investor' : 'Business Owner'}
+            </span>
+          </div>
+         
         </div>
       </div>
 
-      {/* ── Nav ── */}
+      {/* Nav */}
       <div className="relative z-10 flex-1 overflow-y-auto px-0">
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-1">
             <div className="flex flex-col gap-1.5 mt-1 mr-1">
-              {railNavItems.map(({ path, label, icon }) => {
+              {navItems.map(({ path, label, icon }) => {
                 const isActive =
-                  path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+                  path === '/dashboard'
+                    ? location.pathname === '/dashboard' || location.pathname === '/overview'
+                    : location.pathname.startsWith(path);
+
                 return (
                   <NavLink
-                    key={path}
+                    key={path + label}
                     to={path}
-                    className={`relative flex w-full items-center gap-3 rounded-full px-3 py-2 text-left text-[13.5px] font-bold transition-all select-none ${
+                    className={`relative flex w-full items-center gap-3  px-3.5 py-2 text-left text-[13.5px] font-medium transition-all select-none ${
                       isActive
                         ? 'neo-border bg-[#a8ff3e] text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-y-0.5'
                         : 'text-gray-700 hover:bg-white hover:neo-border hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5'
                     }`}
                   >
-                    {/* Icon */}
                     <span className={`shrink-0 ${isActive ? 'text-black' : 'text-[#6B46C1]'}`}>
                       {icon}
                     </span>
-
-
-
-                    {/* Label */}
                     <span className="truncate">{label}</span>
                   </NavLink>
                 );
@@ -169,26 +225,36 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Divider ── */}
+      {/* Divider */}
       <div className="relative z-10 mx-1 my-3 border-t-[3px] border-dashed border-black/20" />
 
-      {/* ── Bottom Section: Settings & Wallet Connect ── */}
-      <div className="relative z-10 flex flex-col gap-2.5 px-0 pt-1">
-        {/* Wallet Trigger Button & Balance Info */}
+      {/* Wallet Connect & Logout */}
+      <div className="relative z-10 flex flex-col gap-2 px-0 pt-1">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="flex w-full items-center justify-center gap-2 neo-border bg-[#ffb6b9] hover:bg-[#ffa6a9] px-4 py-2 text-xs font-bold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Logout
+        </button>
+
         {wallet.isConnected ? (
           <div className="flex flex-col gap-2">
             <button
               type="button"
               onClick={() => setShowWalletModal(true)}
-              className="flex w-full items-center justify-between gap-2 rounded-full neo-border bg-[#22d3ee] px-3.5 py-2 font-syne text-xs font-bold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5"
+              className="flex w-full items-center justify-between gap-2  neo-border bg-[#22d3ee] px-3.5 py-2 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5"
             >
               <div className="flex items-center gap-2 truncate">
-                <span className="h-2 w-2 rounded-full bg-black shrink-0" />
+                <span className="h-2 w-2  bg-black shrink-0" />
                 <span className="truncate">
                   {wallet.address?.substring(0, 6)}...{wallet.address?.substring(wallet.address.length - 4)}
                 </span>
               </div>
-              <span className="text-[10px] font-syne font-extrabold bg-white neo-border px-2 py-0.5 rounded-full shrink-0">
+              <span className="text-[10px] font-syne font-medium bg-white neo-border px-2 py-0.5  shrink-0">
                 {wallet.sbtcBalance} sBTC
               </span>
             </button>
@@ -197,7 +263,7 @@ export const Sidebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowWalletModal(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-full neo-border bg-[#a8ff3e] px-4 py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            className="flex w-full items-center justify-center gap-2  neo-border bg-[#a8ff3e] px-4 py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a1 1 0 11-2 0 1 1 0 012 0z" />
@@ -209,13 +275,13 @@ export const Sidebar: React.FC = () => {
 
       {/* Wallet Connection Modal */}
       {showWalletModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans">
-          <div className="w-full max-w-md rounded-[24px] neo-border-thick bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-syne">
+          <div className="w-full max-w-md  neo-border-thick bg-white p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center justify-between border-b-2 border-black pb-4">
-              <h3 className="font-extrabold text-black text-lg">Connect Stacks Wallet</h3>
+              <h3 className="font-medium text-black text-lg">Connect Stacks Wallet</h3>
               <button
                 onClick={() => setShowWalletModal(false)}
-                className="h-8 w-8 rounded-full neo-border bg-[#f7f7f7] text-black font-bold flex items-center justify-center hover:bg-gray-200"
+                className="h-8 w-8  neo-border bg-[#f7f7f7] text-black font-medium flex items-center justify-center hover:bg-gray-200"
               >
                 ✕
               </button>
@@ -224,40 +290,40 @@ export const Sidebar: React.FC = () => {
             <div className="mt-5 space-y-3">
               <button
                 onClick={() => {
-                  connect('ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG');
+                  connectWallet();
                   setShowWalletModal(false);
                 }}
-                className="flex w-full items-center justify-between rounded-[18px] neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#a8ff3e] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                className="flex w-full items-center justify-between  neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#a8ff3e] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-orange-400 neo-border flex items-center justify-center font-syne font-bold text-black">
-                    LT
+                  <div className="h-10 w-10  bg-orange-400 neo-border flex items-center justify-center font-syne font-medium text-black overflow-hidden">
+                    <img src="https://ide.labstx.online/leather.svg" alt="Leather" className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <div className="font-extrabold text-black">Leather Wallet</div>
-                    <div className="text-xs text-gray-600 font-syne font-bold">Stacks & Bitcoin Native</div>
+                    <div className="font-medium text-black">Leather Wallet</div>
+                    <div className="text-xs text-gray-600 font-syne font-medium">Stacks & Bitcoin Native</div>
                   </div>
                 </div>
-                <span className="font-syne text-xs font-extrabold text-black">Connect →</span>
+                <span className="font-syne text-xs font-medium text-black">Connect →</span>
               </button>
 
               <button
                 onClick={() => {
-                  connect('ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM');
+                  connectWallet();
                   setShowWalletModal(false);
                 }}
-                className="flex w-full items-center justify-between rounded-[18px] neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#c4b5fd] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
+                className="flex w-full items-center justify-between  neo-border bg-[#f7f7f7] p-4 text-left hover:bg-[#c4b5fd] transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-purple-400 neo-border flex items-center justify-center font-syne font-bold text-black">
-                    XV
+                  <div className="h-10 w-10  bg-purple-400 neo-border flex items-center justify-center font-syne font-medium text-black overflow-hidden">
+                    <img src="https://ide.labstx.online/xverse.png" alt="Xverse" className="h-full w-full object-cover" />
                   </div>
                   <div>
-                    <div className="font-extrabold text-black">Xverse Wallet</div>
-                    <div className="text-xs text-gray-600 font-syne font-bold">Bitcoin Web3 Wallet</div>
+                    <div className="font-medium text-black">Xverse Wallet</div>
+                    <div className="text-xs text-gray-600 font-syne font-medium">Bitcoin Web3 Wallet</div>
                   </div>
                 </div>
-                <span className="font-syne text-xs font-extrabold text-black">Connect →</span>
+                <span className="font-syne text-xs font-medium text-black">Connect →</span>
               </button>
 
               {wallet.isConnected && (
@@ -265,10 +331,10 @@ export const Sidebar: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      disconnect();
+                      disconnectWallet();
                       setShowWalletModal(false);
                     }}
-                    className="flex w-full items-center justify-center rounded-full neo-border bg-[#ffb6b9] px-4 py-2.5 text-xs font-extrabold text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9]"
+                    className="flex w-full items-center justify-center  neo-border bg-[#ffb6b9] px-4 py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9]"
                   >
                     Disconnect Wallet
                   </button>
@@ -278,8 +344,6 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
-
-      <div className="relative z-10 pb-1" />
     </aside>
   );
 };

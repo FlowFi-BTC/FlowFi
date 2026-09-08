@@ -3,7 +3,7 @@ import { Card } from '../components/common/Card';
 
 export const ApiDocsPage: React.FC = () => {
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6 font-syne">
       <div className="neo-border-thick bg-white rounded-[28px] p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex items-center gap-2 font-syne text-xs font-bold text-[#6B46C1]">
           <span>05 / DEVELOPER</span>
@@ -75,40 +75,40 @@ export const ApiDocsPage: React.FC = () => {
         <div className="space-y-4 font-syne text-xs">
           <div className="rounded-[18px] neo-border bg-[#f7f7f7] p-4 space-y-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-full neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
+              <span className="px-2.5 py-1  neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
               <span className="text-black font-extrabold text-sm">/receivable/:id</span>
             </div>
-            <p className="text-gray-700 font-sans text-xs font-semibold">
+            <p className="text-gray-700 font-syne text-xs font-semibold">
               Returns full receivable record pulled directly from contract read-only function `get-receivable`.
             </p>
           </div>
 
           <div className="rounded-[18px] neo-border bg-[#f7f7f7] p-4 space-y-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-full neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
+              <span className="px-2.5 py-1  neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
               <span className="text-black font-extrabold text-sm">/receivables</span>
             </div>
-            <p className="text-gray-700 font-sans text-xs font-semibold">
+            <p className="text-gray-700 font-syne text-xs font-semibold">
               Returns list of all registered receivables on Stacks testnet.
             </p>
           </div>
 
           <div className="rounded-[18px] neo-border bg-[#f7f7f7] p-4 space-y-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-full neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
+              <span className="px-2.5 py-1  neo-border bg-[#22d3ee] text-black font-extrabold text-xs">GET</span>
               <span className="text-black font-extrabold text-sm">/receivable/:id/history</span>
             </div>
-            <p className="text-gray-700 font-sans text-xs font-semibold">
+            <p className="text-gray-700 font-syne text-xs font-semibold">
               Chronological list of status-change events and Stacks transaction IDs.
             </p>
           </div>
 
           <div className="rounded-[18px] neo-border bg-[#a8ff3e] p-4 space-y-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]">
             <div className="flex items-center gap-3">
-              <span className="px-2.5 py-1 rounded-full neo-border bg-black text-white font-extrabold text-xs">GET</span>
+              <span className="px-2.5 py-1  neo-border bg-black text-white font-extrabold text-xs">GET</span>
               <span className="text-black font-extrabold text-sm">/receivable/:id/verification</span>
             </div>
-            <p className="text-black font-sans text-xs font-bold">
+            <p className="text-black font-syne text-xs font-bold">
               Returns off-chain verification note attestation, reviewer node, and document SHA-256 hashes.
             </p>
           </div>

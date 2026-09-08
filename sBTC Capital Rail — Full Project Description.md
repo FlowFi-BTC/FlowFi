@@ -1,8 +1,8 @@
-# sBTC Capital Rail
+# FlowFi-BTC
 
 ## Overview
 
-sBTC Capital Rail is an on-chain coordination and transparency layer for financing verified real-world receivables with sBTC.
+FlowFi-BTC is an on-chain coordination and transparency layer for financing verified real-world receivables with sBTC.
 
 Businesses often complete work, deliver products, or provide services before they receive payment. A business may be owed $3,000 today but have to wait 30–60 days for its customer to pay. During that period, the business may need working capital for inventory, operations, payroll, logistics, or a new order.
 

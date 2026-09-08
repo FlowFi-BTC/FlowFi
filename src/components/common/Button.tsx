@@ -16,7 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    'inline-flex items-center justify-center font-bold rounded-full neo-border transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none text-black font-sans';
+    'inline-flex items-center justify-center font-bold  neo-border transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed select-none text-black font-syne';
 
   const sizeStyles = {
     sm: 'px-3 py-1.5 text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]',

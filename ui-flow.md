@@ -1,85 +1,289 @@
-[1. Landing Page] ──(Connect Wallet / Submit)──> [2. Dashboard] ──(New Receivable)──> [3. Submit Receivable]
-       │                                                                                      │
-       │──(View Pilot)────────────────────────────────────────────────┐                       ▼
-       │                                                              │             [4. Verification Status]
-       ▼                                                              │                       │
-[8. Transparency / Pilot Page] <──(View Proof)── [7. Active Funding] <──(Confirm)── [6. Funding Modal] <──(Fund)── [5. Receivable Detail]
-1. Landing Page
-Role: Public marketing and onboarding page explaining the sBTC receivable financing platform.
+Given the scope we've now locked down, I would make a few strategic changes before using this as the grant-facing landing page.
 
-Key Components: Hero banner ("Unlock Working Capital with sBTC"), CTA buttons ("View Pilot", "Submit Receivable"), "How It Works" overview, and pilot statistics.
+The biggest issue isn't that the page needs more features. It's that the landing page should make the capital flow immediately obvious.
 
-Connections:
+1. Make the hero more explicit
 
-"Connect Wallet" / "Submit Receivable" CTA → Directs users to the Dashboard (2) or directly to Submit Receivable (3).
+The first screen should answer three questions immediately:
 
-"View Pilot" CTA → Directs users to Transparency / Pilot Page (8).
+What is it?
+Receivables financing.
 
-2. Dashboard
-Role: Main control panel for logged-in users to view asset overviews and recent account activity.
+Who is it for?
+Businesses + capital providers.
 
-Key Components: Overview metrics (Submitted, Verified, Funded, Completed Receivables), recent activity feed, and quick submit prompt.
+What does sBTC do?
+Moves the financing/settlement on-chain.
 
-Connections:
+I'd use something along these lines:
 
-"Submit Receivable" Button → Opens Submit Receivable (3).
+Bridging Real-World Receivables to Bitcoin Capital.
 
-Activity List / "Verification" Link → Opens Verification Status (4).
+FlowFi-BTC connects verified business receivables with Bitcoin capital, enabling transparent, programmable financing and settlement on Stacks.
 
-Sidebar Navigation → Allows switching to Funding (7) or Settings.
+Then two CTAs:
 
-3. Submit Receivable (5-Step Form)
-Role: Multi-step submission form for businesses to register a new receivable for verification.
+Explore Receivables
+Submit a Receivable
 
-Key Components: 5-step progress bar (1. Business, 2. Receivable, 3. Debtor, 4. Documents, 5. Review), text inputs for registration, representative details, and wallet address.
+This is better than making the visitor figure out what "Capital Rail" means.
 
-Connections:
+2. Add the two-sided model immediately below the hero
 
-"Continue" (Final Step Submission) → Submits the data and forwards the user to Verification Status (4).
+You now have two users, so make that visible:
 
-4. Verification Status
-Role: Progress tracker showing real-time updates as the platform verifies business, debtor, and receivable authenticity.
+For Businesses                  For Capital Providers
 
-Key Components: Status timeline (Submitted → Under Review → Business Verified → Debtor Confirmed → Receivable Verified), verifier notes, transaction hash links.
+Submit verified                Discover verified
+receivables                    opportunities
 
-Connections:
+Request working capital        Fund with sBTC
 
-"View Receivable" / Verification Complete → Leads directly to the Receivable Detail (5) page once verified.
+Track financing                Track funding
+through settlement             through settlement
 
-5. Receivable Detail
-Role: Detailed breakdown of a specific verified receivable for capital providers or business owners.
+Buttons:
 
-Key Components: Total sBTC requested, due date, tabbed info (Details, Verification, Documents, Activity), debtor information, and action CTA.
+I'm a Business →
 
-Connections:
+I'm a Capital Provider →
 
-"Fund This Receivable" Button → Triggers the Funding Flow Modal (6).
+This will also naturally lead into the onboarding architecture we discussed.
 
-6. Funding Flow (Confirmation Modal)
-Role: On-chain transaction execution modal for approving sBTC funding to the receivable.
+3. Add a very simple "How it works"
 
-Key Components: Summary box (amount requested, due date, purpose) and wallet execution button ("Connect Wallet" / "Confirm").
+I'd make this one of the strongest sections:
 
-Connections:
+01  Submit
+    Business submits a receivable.
 
-"Confirm Transaction" → Executes the smart contract transaction and redirects to Funding / Active Funding (7).
+        ↓
 
-"Cancel" → Closes the modal and returns to Receivable Detail (5).
+02  Verify
+    Business and receivable evidence
+    are reviewed.
 
-7. Funding / Active Funding
-Role: Portfolio management page displaying all active, repaid, and defaulted capital positions.
+        ↓
 
-Key Components: Funding counters (Funded, Repaid, Defaulted), active investment table with status tags, amounts, and repayment schedules.
+03  Fund
+    Capital provider funds the
+    verified receivable with sBTC.
 
-Connections:
+        ↓
 
-Sidebar "Transparency" / Explorer Links → Opens Transparency / Pilot Page (8) for public auditability.
+04  Settle
+    Repayment or default is recorded
+    transparently on-chain.
 
-8. Transparency / Pilot Page
-Role: Public on-chain verification ledger tracking the full lifecycle of sBTC transactions.
+That tells the entire Capital Rail story in about 10 seconds.
 
-Key Components: On-chain status sequence (Registered, Verified, Funded, Repaid), smart contract address links, Stacks Explorer links, and repository/documentation buttons.
+4. Show the verification concept
 
-Connections:
+This is especially important because we've decided verification is part of the trust story.
 
-Serves as the public verification endpoint accessible from any section of the app via navigation or transaction hash links.
+Don't claim:
+
+"Every business is KYB verified"
+
+until you've actually integrated a KYB provider.
+
+Instead:
+
+Verified Receivables
+
+Each financing opportunity includes verification information about the business and supporting receivable evidence before it becomes eligible for funding.
+
+Then visually show:
+
+✓ Business information reviewed
+✓ Receivable evidence reviewed
+✓ Verification recorded
+✓ On-chain financing state
+
+Later, when you integrate Persona or another provider, you can upgrade this to formal KYB/KYC.
+
+5. Add an actual marketplace preview
+
+This is probably the most important UI addition I'd make.
+
+Instead of the landing page being mostly marketing, show 2–3 example opportunities:
+
+Explore Funding Opportunities
+
+┌─────────────────────────────┐
+│ ABC Logistics               │
+│ Receivable #CR-001          │
+│                             │
+│ $10,000 requested            │
+│ 45 day term                 │
+│ ✓ Verified                  │
+│                             │
+│ ███████░░░ 70% funded       │
+│                             │
+│ [View Opportunity]           │
+└─────────────────────────────┘
+
+Then:
+
+Explore all receivables →
+
+That connects your landing page directly to the product you're actually building.
+
+6. Don't over-market "investment"
+
+This is important for the grant MVP.
+
+I'd avoid hero copy such as:
+
+"Earn high yields with Bitcoin."
+
+or
+
+"Invest in real-world assets."
+
+Your actual MVP is much more defensible as:
+
+Finance verified receivables with transparent on-chain settlement.
+
+You aren't trying to sell a yield product yet.
+
+7. Add a "Built on Bitcoin" section
+
+Something simple:
+
+Powered by Bitcoin. Built on Stacks.
+
+Bitcoin
+Security & liquidity
+
+sBTC
+Capital movement
+
+Stacks
+Programmable settlement
+
+On-chain records
+Transparent financing lifecycle
+
+And link to your public smart-contract repository once it's ready.
+
+8. Add a small trust/disclosure section
+
+Since this is going before grant reviewers, I'd actually embrace the fact that this is an experimental pilot.
+
+Something like:
+
+Pilot
+
+FlowFi-BTC is currently an experimental financing pilot. Initial transactions are intentionally limited in size while the financing mechanism, verification process, and settlement contracts are validated.
+
+Then link:
+
+Read Risk & Security →
+
+That makes you look more credible, not less.
+
+The final landing-page structure I'd use
+NAVBAR
+Logo
+Explore Receivables
+How It Works
+For Businesses
+Docs
+GitHub
+[Launch App]
+
+────────────────────────────
+
+HERO
+
+Bridging Real-World Receivables
+to Bitcoin Capital.
+
+Description
+
+[Explore Receivables] [Submit Receivable]
+
+────────────────────────────
+
+TRUST / PROTOCOL STRIP
+
+Bitcoin | sBTC | Stacks | On-chain Settlement
+
+────────────────────────────
+
+HOW IT WORKS
+
+1. Submit
+2. Verify
+3. Fund
+4. Settle
+
+────────────────────────────
+
+FUNDING MARKETPLACE PREVIEW
+
+Receivable #001
+Receivable #002
+Receivable #003
+
+[Explore Marketplace]
+
+────────────────────────────
+
+FOR BUSINESSES
+
+Turn verified receivables
+into working capital.
+
+[Submit a Receivable]
+
+────────────────────────────
+
+FOR CAPITAL PROVIDERS
+
+Discover verified receivables
+and fund them with sBTC.
+
+[Explore Opportunities]
+
+────────────────────────────
+
+TRANSPARENCY
+
+Verification
+On-chain records
+Funding transactions
+Settlement history
+
+────────────────────────────
+
+PILOT / SECURITY
+
+Experimental pilot
+Limited transaction size
+Unaudited contracts
+Risk disclosure
+
+────────────────────────────
+
+OPEN SOURCE
+
+Core financing contracts are
+open source and independently
+inspectable.
+
+[GitHub] [Documentation]
+
+────────────────────────────
+
+FOOTER
+My biggest recommendation
+
+Don't make the landing page feel like a generic DeFi protocol.
+
+Make it feel like a real financial infrastructure product.
+
+The strongest visual narrative is:
+
+Business → Receivable → Verification → sBTC Funding → Settlement

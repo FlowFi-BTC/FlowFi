@@ -1,27 +1,12 @@
+export * from './api';
+
 export type Page = 'Overview' | 'Protocols' | 'Cascade Risk' | 'Liquidity' | 'API Docs';
 
-export type ReceivableStatus = 0 | 1 | 2 | 3;
+export type LegacyReceivableStatus = 0 | 1 | 2 | 3;
 // 0: Registered, 1: Funded, 2: Repaid, 3: Defaulted
 
-export interface Receivable {
-  id: number;
-  borrower: string;
-  borrowerName: string;
-  provider: string | null;
-  providerName?: string;
-  amount: number; // in sBTC micro-units (1 sBTC = 100,000,000 micro-units)
-  amountUsd: number;
-  dueBlock: number;
-  dueDateEstimated: string;
-  docHash: string;
-  status: ReceivableStatus;
-  createdAt: string;
-  invoiceNumber: string;
-  counterparty: string;
-}
-
 export interface VerificationNote {
-  receivableId: number;
+  receivableId: number | string;
   docHash: string;
   reviewedBy: string;
   reviewedAt: string;
@@ -37,8 +22,8 @@ export interface VerificationNote {
 
 export interface StatusEvent {
   id: string;
-  receivableId: number;
-  status: ReceivableStatus;
+  receivableId: number | string;
+  status: any;
   statusLabel: string;
   txHash: string;
   blockHeight: number;

@@ -4,7 +4,7 @@ import { Sidebar } from './Sidebar';
 
 export const Layout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#f7f7f7] text-black antialiased selection:bg-[#a8ff3e] selection:text-black font-sans">
+    <div className="min-h-screen bg-[#f7f7f7] text-black antialiased selection:bg-[#a8ff3e] selection:text-black font-syne">
       {/* Sidebar fixed left */}
       <Sidebar />
 

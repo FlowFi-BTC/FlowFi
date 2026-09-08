@@ -9,13 +9,13 @@ interface ProtocolGridProps {
 
 export const ProtocolGrid: React.FC<ProtocolGridProps> = ({ protocols }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-sans">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-syne">
       {protocols.map((protocol) => (
         <Card key={protocol.name} hoverable className="flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between border-b-2 border-black pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-full bg-[#f7f7f7] neo-border flex items-center justify-center font-syne text-xs font-black text-black">
+                <div className="h-9 w-9  bg-[#f7f7f7] neo-border flex items-center justify-center font-syne text-xs font-black text-black">
                   {protocol.name.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
@@ -44,19 +44,19 @@ export const ProtocolGrid: React.FC<ProtocolGridProps> = ({ protocols }) => {
 
             <div className="mt-4 grid grid-cols-3 gap-2 pt-3 border-t-2 border-black/10 font-syne text-xs">
               <div>
-                <span className="text-[10px] text-gray-600 uppercase font-sans font-extrabold block">
+                <span className="text-[10px] text-gray-600 uppercase font-syne font-extrabold block">
                   TVL Depth
                 </span>
                 <span className="font-black text-black text-sm">{protocol.tvl}</span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-600 uppercase font-sans font-extrabold block">
+                <span className="text-[10px] text-gray-600 uppercase font-syne font-extrabold block">
                   Yield APY
                 </span>
                 <span className="font-black text-[#6B46C1] text-sm">{protocol.apy}</span>
               </div>
               <div>
-                <span className="text-[10px] text-gray-600 uppercase font-sans font-extrabold block">
+                <span className="text-[10px] text-gray-600 uppercase font-syne font-extrabold block">
                   Risk Score
                 </span>
                 <span className="font-black text-black text-sm">{protocol.riskScore}</span>
