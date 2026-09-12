@@ -14,6 +14,8 @@ export function useWallet() {
     selectRoleOnboarding,
     registerBusinessProfile,
     registerInvestorProfile,
+    updateBusinessProfile,
+    updateInvestorProfile,
   } = useUser();
 
   return {
@@ -29,5 +31,7 @@ export function useWallet() {
     selectRoleOnboarding,
     registerBusinessProfile,
     registerInvestorProfile,
+    updateBusinessProfile,
+    updateInvestorProfile,
   };
 }

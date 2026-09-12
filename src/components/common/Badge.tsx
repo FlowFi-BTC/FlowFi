@@ -47,8 +47,8 @@ export const Badge: React.FC<BadgeProps> = ({
   );
 };
 
-export const StatusBadge: React.FC<{ status: ReceivableStatus }> = ({ status }) => {
-  switch (status) {
+export const StatusBadge: React.FC<{ status: ReceivableStatus | number | string }> = ({ status }) => {
+  switch (status as string | number) {
     case 0:
       return <Badge variant="amber">REGISTERED</Badge>;
     case 1:

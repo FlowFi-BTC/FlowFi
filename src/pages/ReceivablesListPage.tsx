@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { receivablesApi, marketplaceApi } from '../lib/api';
 import type { Receivable, MarketplaceItem } from '../types/api';
 import { Plus, RefreshCcw } from 'lucide-react';
+import { ScaleLoader } from 'react-spinners';
 
 const RailStar = ({ className = '' }: { className?: string }) => (
   <svg width="16" height="16" viewBox="0 0 24 24" className={className}>
@@ -60,6 +61,10 @@ export const ReceivablesListPage: React.FC = () => {
             dueDate: m.dueDate,
             businessName: m.businessName,
             createdAt: m.createdAt,
+            debtor: null,
+            documentStatus: 'NONE' as const,
+            evidenceStatus: 'PENDING' as const,
+            registerTxHash: null,
           }));
         }
       }
@@ -164,7 +169,9 @@ export const ReceivablesListPage: React.FC = () => {
           {/* Grid */}
           {loadingList ? (
             <div className="py-12 text-center text-xs font-medium text-gray-500 animate-pulse space-y-2">
-              <div className="text-xl">⏳</div>
+                     <div className="text-xl inline-block">
+
+<ScaleLoader color="#000000" speedMultiplier={0.9} /></div>
               <div>Fetching receivables list....</div>
             </div>
           ) : filteredReceivables.length === 0 ? (
@@ -196,7 +203,7 @@ export const ReceivablesListPage: React.FC = () => {
                     <div className="min-w-0">
                       <span className="text-sm font-medium text-black block truncate">{item.title}</span>
                       <span className="text-xs text-gray-600 font-mono">
-                        ${typeof item.amountUsd === 'number' ? item.amountUsd.toLocaleString() : item.amountUsd} USD • Ref: {item.invoiceNumber || item.id}
+                        ${Number(item.amountUsd || 0).toLocaleString()} USD • Ref: {item.invoiceNumber || item.id}
                       </span>
                     </div>
                   </div>

@@ -10,6 +10,7 @@ import type {
   InvestorFundingItem,
 } from '../types/api';
 import { RefreshCcw } from 'lucide-react';
+import { ScaleLoader } from 'react-spinners';
 
 interface StatCard {
   label: string;
@@ -310,14 +311,16 @@ export const OverviewPage: React.FC = () => {
               </h2>
        
             </div>
-            <Link to={isInvestor ? "/funding" : "/marketplace"} className="text-[13px] font-bold text-[#6B46C1] hover:underline">
+            <Link to={isInvestor ? "/investor/fundings" : "/dashboard/receivables"} className="text-[13px] font-bold text-[#6B46C1] hover:underline">
               View All →
             </Link>
           </div>
 
           {loading ? (
             <div className="py-8 text-center text-xs font-medium text-gray-500 animate-pulse space-y-2">
-              <div className="text-lg">⏳</div>
+                     <div className="text-xl inline-block">
+
+<ScaleLoader color="#000000" speedMultiplier={0.9} /></div>
               <div>Fetching metrics...</div>
             </div>
           ) : recentItems.length === 0 ? (
@@ -333,7 +336,7 @@ export const OverviewPage: React.FC = () => {
                   : "You haven't registered any trade receivables yet. Submit an invoice to start drawing down sBTC working capital."}
               </p>
               <Link
-                to={isInvestor ? "/marketplace" : "/submit-receivable"}
+                to={isInvestor ? "/receivable" : "/submit-receivable"}
                 className={`inline-block neo-border px-4 py-2 font-bold text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 ${
                   isInvestor ? 'bg-[#c4b5fd]' : 'bg-[#a8ff3e]'
                 }`}
@@ -346,7 +349,7 @@ export const OverviewPage: React.FC = () => {
               {recentItems.map((f: any) => (
                 <Link
                   key={f.id}
-                  to={`/receivable/${f.id}`}
+                  to={`/investor/fundings/${f.id}`}
                   className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-black/10 bg-[#f7f7f7] p-4 hover:border-black/40 hover:bg-white transition-all group font-syne neo-border"
                 >
                   <div className="flex items-center gap-3">
@@ -371,7 +374,7 @@ export const OverviewPage: React.FC = () => {
               {recentItems.map((r: any) => (
                 <Link
                   key={r.id}
-                  to={`/receivable/${r.id}`}
+                  to={`/receivables/${r.id}`}
                   className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-2 border-black/10 bg-[#f7f7f7] p-4 hover:border-black/40 hover:bg-white transition-all group font-syne neo-border"
                 >
                   <div className="flex items-center gap-3">
@@ -411,7 +414,7 @@ export const OverviewPage: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/funding"
+              to="/receivable"
               className="relative z-10 shrink-0 bg-[#a8ff3e] px-5 py-2.5 font-bold text-black neo-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-1"
             >
               Explore Receivables →
@@ -428,7 +431,7 @@ export const OverviewPage: React.FC = () => {
               </p>
             </div>
             <Link
-              to="/submit-receivable"
+              to="/dashboard/submit"
               className="relative z-10 shrink-0 bg-[#a8ff3e] px-5 py-2.5 font-bold text-black neo-border shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] transition-transform hover:-translate-y-0.5 active:translate-y-1"
             >
               Submit Receivable →

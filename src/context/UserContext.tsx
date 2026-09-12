@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { WalletState } from '../types';
-import type { BusinessProfile, UserProfile, UserRole } from '../types/api';
-import { authApi, onboardingApi, businessApi, investorApi } from '../lib/api';
+import type { BusinessProfile, InvestorProfile, UserProfile, UserRole } from '../types/api';
+import { authApi, onboardingApi, businessApi, investorApi, TOKEN_KEY } from '../lib/api';
 import {
   connectStacksWallet,
   disconnect as disconnectStacksSession,
@@ -29,14 +29,17 @@ interface UserContextType {
     registrationNumber?: string;
     website?: string;
     description?: string;
+    country?: string;
   }) => Promise<BusinessProfile>;
   registerInvestorProfile: (displayName: string) => Promise<void>;
+  updateBusinessProfile: (data: Partial<BusinessProfile>) => Promise<BusinessProfile>;
+  updateInvestorProfile: (displayName: string) => Promise<InvestorProfile>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_ROLE_KEY = 'flowfi_sbtc_user_role';
-const LOCAL_STORAGE_TOKEN_KEY = 'flowfi_token';
+export const LOCAL_STORAGE_ROLE_KEY = 'flowfi_sbtc_user_role';
+export const LOCAL_STORAGE_TOKEN_KEY = TOKEN_KEY;
 
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [role, setRoleState] = useState<UserRole>(() => {
@@ -92,16 +95,11 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // 2. Request Wallet Challenge from REST API POST /v1/auth/challenge
       const challenge = await authApi.requestChallenge(walletAddress);
 
-      // 3. Prompt Wallet to sign message using stx_signMessage
-      let signature = '';
-      try {
-        const signRes = await signStacksMessage(challenge.message);
-        signature = signRes.signature;
-      } catch (err) {
-        console.warn('Message signing rejected or skipped by user wallet:', err);
-        // Fallback signature payload format if signing modal is closed
-        signature = `0xsig_${Date.now()}_${walletAddress.substring(0, 8)}`;
-      }
+      // 3. Prompt Wallet to sign message using stx_signMessage.
+      // A rejection returns to pre-click state silently — never fake a signature.
+      const signRes = await signStacksMessage(challenge.message);
+      const signature = signRes.signature;
+      if (!signature) throw new Error('Wallet did not return a signature');
 
       // 4. Verify Wallet Signature with REST API POST /v1/auth/verify
       const verifyRes = await authApi.verifySignature(challenge.challengeId, walletAddress, signature);
@@ -158,9 +156,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedToken) {
         const userProfile = await authApi.getMe();
         setUser(userProfile);
-        if (userProfile.role === 'BUSINESS' || (userProfile.role as string) === 'business') {
+        if (userProfile.role === 'BUSINESS' || userProfile.role === 'business') {
           setRole('BUSINESS');
-        } else if (userProfile.role === 'INVESTOR' || (userProfile.role as string) === 'investor') {
+        } else if (userProfile.role === 'INVESTOR' || userProfile.role === 'investor') {
           setRole('INVESTOR');
         } else if (userProfile.businessProfile) {
           setRole('BUSINESS');
@@ -221,19 +219,89 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const registerBusinessProfile = async (data: {
     companyName: string;
+    registrationNumber?: string;
+    website?: string;
+    description?: string;
+    country?: string;
   }) => {
     setRole('BUSINESS');
-    const biz = await businessApi.register(data);
-    await refreshUserSession();
-    setRole('BUSINESS');
-    return biz;
+    try {
+      const biz = await businessApi.register(data);
+      await refreshUserSession();
+      setRole('BUSINESS');
+      return biz;
+    } catch (err: any) {
+      // PROFILE_EXISTS / DUPLICATE_ENTRY -> fall back to update so Settings save never dead-ends
+      const code = err?.code || err?.error?.code;
+      if (code === 'PROFILE_EXISTS' || code === 'DUPLICATE_ENTRY' || err?.status === 409) {
+        const updated = await businessApi.updateMe(data);
+        await refreshUserSession();
+        setRole('BUSINESS');
+        return updated;
+      }
+      throw err;
+    }
   };
 
   const registerInvestorProfile = async (displayName: string) => {
     setRole('INVESTOR');
-    await investorApi.register(displayName);
+    try {
+      await investorApi.register(displayName);
+    } catch (err: any) {
+      const code = err?.code || err?.error?.code;
+      if (code === 'PROFILE_EXISTS' || code === 'DUPLICATE_ENTRY' || err?.status === 409) {
+        await investorApi.updateMe({ displayName });
+      } else {
+        throw err;
+      }
+    }
     await refreshUserSession();
     setRole('INVESTOR');
+  };
+
+  const updateBusinessProfile = async (data: Partial<BusinessProfile>) => {
+    try {
+      const updated = await businessApi.updateMe({
+        companyName: data.companyName ?? undefined,
+        registrationNumber: data.registrationNumber ?? undefined,
+        website: data.website ?? undefined,
+        description: data.description ?? undefined,
+        country: (data as any).country ?? undefined,
+      });
+      await refreshUserSession();
+      setRole('BUSINESS');
+      return updated;
+    } catch (err: any) {
+      // If no profile exists yet (404), create it instead
+      if (err?.code === 'NOT_FOUND' || err?.status === 404) {
+        return registerBusinessProfile({
+          companyName: data.companyName || 'Unnamed Business',
+          registrationNumber: data.registrationNumber || undefined,
+          website: data.website || undefined,
+          description: data.description || undefined,
+          country: (data as any).country || undefined,
+        });
+      }
+      throw err;
+    }
+  };
+
+  const updateInvestorProfile = async (displayName: string) => {
+    try {
+      const updated = await investorApi.updateMe({ displayName });
+      await refreshUserSession();
+      setRole('INVESTOR');
+      return updated;
+    } catch (err: any) {
+      if (err?.code === 'NOT_FOUND' || err?.status === 404) {
+        await registerInvestorProfile(displayName);
+        // Re-fetch fresh profile after registration
+        const fresh = await investorApi.getMe().catch(() => null);
+        if (fresh) return fresh;
+        throw err;
+      }
+      throw err;
+    }
   };
 
   return (
@@ -253,6 +321,8 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectRoleOnboarding,
         registerBusinessProfile,
         registerInvestorProfile,
+        updateBusinessProfile,
+        updateInvestorProfile,
       }}
     >
       {children}

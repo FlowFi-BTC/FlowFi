@@ -48,7 +48,7 @@ export const LandingPage: React.FC = () => {
                 </span>
               </div>
               <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 hidden sm:block">
-                
+
               </p>
             </div>
           </Link>
@@ -67,7 +67,7 @@ export const LandingPage: React.FC = () => {
             <a href="#for-capital-providers" className="text-gray-700 hover:text-black transition-colors">
               For Capital Providers
             </a>
-           
+
           </nav>
 
           {/* Header Action CTA */}
@@ -109,7 +109,7 @@ export const LandingPage: React.FC = () => {
 
           {/* Title */}
           <h1 className="font-syne text-2xl sm:text-4xl md:text-5xl font-medium tracking-tight text-black leading-[1.05]">
-            Bridging Real-World <br/> Receivables to <span className="text-[#6B46C1] underline decoration-[#a8ff3e] decoration-wavy">Bitcoin Capital</span>.
+            Bridging Real-World <br /> Receivables to <span className="text-[#6B46C1] underline decoration-[#a8ff3e] decoration-wavy">Bitcoin Capital</span>.
           </h1>
 
           {/* Subtitle per UI Flow */}
@@ -172,7 +172,7 @@ export const LandingPage: React.FC = () => {
       {/* ── 4. TWO-SIDED MODEL SECTION ── */}
       <section className="py-20 px-4 sm:px-8 max-w-7xl mx-auto space-y-12">
         <div className="text-center space-y-3">
-        
+
           <h2 className="font-syne text-3xl sm:text-5xl font-medium text-black tracking-tight">
             Built for Businesses & Capital Providers
           </h2>
@@ -266,7 +266,7 @@ export const LandingPage: React.FC = () => {
       <section id="how-it-works" className="py-20 px-4 sm:px-8 border-t-[3px] border-black bg-white">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center space-y-3">
-           
+
             <h2 className="font-syne text-3xl sm:text-5xl font-medium text-black tracking-tight">
               How FlowFi-BTC Works
             </h2>
@@ -326,7 +326,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/funding"
+                to="/receivable"
                 className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
               >
                 Explore Funding →
@@ -362,6 +362,7 @@ export const LandingPage: React.FC = () => {
             <span className="font-syne text-xs font-medium uppercase tracking-wider text-black bg-[#22d3ee] px-3 py-1  neo-border">
               Trust & Transparency Framework
             </span>
+            <div className="h-5" />
             <h2 className="font-syne text-3xl sm:text-4xl font-medium text-black">
               Verified Receivables
             </h2>
@@ -415,7 +416,7 @@ export const LandingPage: React.FC = () => {
         <div className="mx-auto max-w-7xl space-y-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-2">
-            
+
               <h2 className="font-syne text-3xl sm:text-5xl font-medium text-white">
                 Explore Funding Opportunities
               </h2>
@@ -425,7 +426,7 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <Link
-              to="/funding"
+              to="/marketplace"
               className=" neo-border bg-[#a8ff3e] px-6 py-3 font-syne text-xs font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform self-start md:self-auto"
             >
               Explore All Receivables →
@@ -521,7 +522,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <Link
-                to="/receivable/1"
+                to="/receivable"
                 className="w-full text-center inline-block  neo-border bg-[#c4b5fd] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
               >
                 View Opportunity
@@ -566,7 +567,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <Link
-                to="/funding"
+                to="/receivable"
                 className="w-full text-center inline-block  neo-border bg-[#a8ff3e] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
               >
                 View Opportunity
@@ -579,7 +580,7 @@ export const LandingPage: React.FC = () => {
       {/* ── 8. EXPERIMENTAL PILOT / RISK DISCLOSURE ── */}
       <section className="py-16 px-4 sm:px-8 bg-white border-t-[3px] border-black">
         <div className="mx-auto max-w-5xl text-center space-y-6">
-         
+
 
           <h2 className="font-syne text-2xl sm:text-4xl font-medium text-black">
             Pilot Status & Risk Disclosure
@@ -598,7 +599,7 @@ export const LandingPage: React.FC = () => {
             </Link>
 
             <Link
-              to="/cascade-risk"
+              to="/history"
               className=" neo-border bg-[#ffb6b9] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
             >
               Read Risk & Security Framework →
@@ -659,8 +660,8 @@ export const LandingPage: React.FC = () => {
             <h4 className="font-syne font-medium text-sm text-black mb-3">Core Pages</h4>
             <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
               <li><Link to="/dashboard" className="hover:text-black">Dashboard</Link></li>
-              <li><Link to="/submit-receivable" className="hover:text-black">Submit Receivable</Link></li>
-              <li><Link to="/funding" className="hover:text-black">Active Funding</Link></li>
+              <li><Link to="/dashboard/submit" className="hover:text-black">Submit Receivable</Link></li>
+              <li><Link to="/dashboard/funding" className="hover:text-black">Active Funding</Link></li>
               <li><Link to="/verification" className="hover:text-black">Verification Log</Link></li>
               <li><Link to="/history" className="hover:text-black">Transparency Log</Link></li>
             </ul>
@@ -669,16 +670,16 @@ export const LandingPage: React.FC = () => {
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Resources</h4>
             <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
-              <li><Link to="/cascade-risk" className="hover:text-black">Github</Link></li>
-              <li><Link to="/liquidity" className="hover:text-black">Contracts</Link></li>
-           
+              <li><Link to="https://github.com/FlowFi-BTC/FlowFi-BTC" className="hover:text-black">Github</Link></li>
+              <li><Link to="/api-docs" className="hover:text-black">Contracts</Link></li>
+
             </ul>
           </div>
 
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Stacks Testnet</h4>
             <div className="space-y-2 text-xs font-syne font-medium text-gray-600">
-              <p>Contract: <span className="text-black font-medium">sbtc-capital-rail-v2</span></p>
+              <p>Contract: <span className="text-black font-medium">flowfi-escrow</span></p>
               <p>Network: <span className="text-black font-medium">Stacks Testnet</span></p>
               <div className="pt-2">
                 <span className="inline-block  neo-border bg-[#a8ff3e] px-3 py-1 text-[10px] font-medium text-black">
@@ -692,7 +693,7 @@ export const LandingPage: React.FC = () => {
         <div className="mx-auto max-w-7xl mt-8 pt-6 border-t-2 border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-500 font-syne">
           <p>© 2026 FlowFi-BTC / FlowFi-BTC. Open source MIT protocol.</p>
           <div className="flex items-center gap-4">
-            <Link to="/settings" className="hover:text-black">Settings</Link>
+            <Link to="/dashboard/settings" className="hover:text-black">Settings</Link>
             <span>•</span>
             <Link to="/api-docs" className="hover:text-black">API Docs</Link>
           </div>
@@ -714,7 +715,7 @@ export const LandingPage: React.FC = () => {
               </button>
             </div>
 
-           
+
           </div>
         </div>
       )}

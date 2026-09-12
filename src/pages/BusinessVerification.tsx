@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useUser } from '../context/UserContext';
-import { businessApi } from '../lib/api';
+import { businessApi, businessVerificationApi } from '../lib/api';
+import { useOnchainAction, phaseLabel } from '../hooks/useOnchainAction';
+import { friendlyErrorMessage } from '../lib/errors';
 import type { BusinessProfile } from '../types/api';
 
 const RailStar = ({ className = '' }: { className?: string }) => (
@@ -26,18 +28,23 @@ export const BusinessVerificationPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, wallet, refreshUserSession } = useUser();
   const [business, setBusiness] = useState<BusinessProfile | null>(user?.businessProfile || null);
+  const [verification, setVerification] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const registerOnchain = useOnchainAction();
 
   useEffect(() => {
     const fetchBusinessInfo = async () => {
       try {
         setIsLoading(true);
-        const data = await businessApi.getMe();
+        const data = await businessApi.getMe().catch(() => null);
         if (data) {
           setBusiness(data);
+          // Canonical verification object (#23) — verificationStatus is the legacy mirror
+          const ver = await businessVerificationApi.get(data.id).catch(() => null);
+          if (ver) setVerification(ver);
         }
       } catch (e) {
         console.warn('Could not fetch business info:', e);
@@ -51,23 +58,58 @@ export const BusinessVerificationPage: React.FC = () => {
 
   const currentStatus = success
     ? 'VERIFIED'
-    : business?.verificationStatus || user?.businessProfile?.verificationStatus || 'PENDING';
+    : verification?.verification?.status || business?.verificationStatus || user?.businessProfile?.verificationStatus || 'PENDING';
   const isVerified = currentStatus === 'VERIFIED';
 
+  // Off-chain review: #22 start → #24 complete (MVP: owner-completable pilot flow;
+  // production restricts completion to a verifier/admin role).
   const handleVerifyBusiness = async () => {
+    if (!business?.id) {
+      setError('Create your business profile in Settings first (POST /businesses).');
+      return;
+    }
     setIsVerifying(true);
     setError(null);
     try {
-      const updated = await businessApi.verifyBusiness();
-      setBusiness(updated);
+      await businessVerificationApi.start(business.id, { method: 'MANUAL', level: 'BASIC' }).catch(() => null);
+      const done = await businessVerificationApi.complete(business.id, {
+        status: 'VERIFIED',
+        notes: 'Verified business documentation and CAC certificate',
+        method: 'MANUAL',
+        level: 'BASIC',
+      });
+      if (done?.verification) setVerification(done);
+      const fresh = await businessApi.getMe().catch(() => null);
+      if (fresh) setBusiness(fresh);
       await refreshUserSession();
       setSuccess(true);
     } catch (err: any) {
-      setError(err?.message || 'Verification update failed on API server');
+      setError(friendlyErrorMessage(err, 'Verification update failed on API server'));
     } finally {
       setIsVerifying(false);
     }
   };
+
+  // On-chain identity: #25 prepare → wallet signs → #26 confirm (BUSINESS wallet becomes owner).
+  const handleRegisterOnchain = async () => {
+    if (!business?.id) return;
+    setError(null);
+    try {
+      await registerOnchain.run({
+        prepare: (key) => businessVerificationApi.prepareRegister(business.id, {}, key),
+        confirm: (prepared: any, txHash, key) =>
+          businessVerificationApi.confirmRegister(business.id, { txHash, operationId: prepared.operationId }, key),
+        onDone: async () => {
+          const fresh = await businessApi.getMe().catch(() => null);
+          if (fresh) setBusiness(fresh);
+          await refreshUserSession();
+        },
+      });
+    } catch (err: any) {
+      setError(friendlyErrorMessage(err));
+    }
+  };
+  const registerBusyLabel = phaseLabel(registerOnchain.phase);
 
   const businessName = business?.companyName || user?.businessProfile?.companyName || 'Business Entity';
   const regNum = business?.registrationNumber || user?.businessProfile?.registrationNumber || 'RC-998821';
@@ -333,18 +375,31 @@ export const BusinessVerificationPage: React.FC = () => {
 
               <p className="font-syne text-sm font-medium text-gray-700 leading-relaxed">
                 {isVerified
-                  ? 'Your business verification is complete. You can now access your Business Dashboard and submit trade receivables.'
-                  : `Click the button below to verify ${businessName} and activate your Business Dashboard.`}
+                  ? 'Off-chain review is VERIFIED. Register the business on-chain so receivables can reference its uint id — then enter the dashboard.'
+                  : `Click the button below to run the off-chain review (#22 start → #24 complete) for ${businessName}.`}
               </p>
 
               {isVerified ? (
-                <button
-                  type="button"
-                  onClick={() => navigate('/dashboard')}
-                  className="w-full inline-flex items-center justify-center neo-border bg-[#a8ff3e] py-4 font-syne text-sm font-bold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 cursor-pointer"
-                >
-                  Enter Business Dashboard →
-                </button>
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={handleRegisterOnchain}
+                    disabled={registerOnchain.isBusy}
+                    className="w-full inline-flex items-center justify-center neo-border bg-[#22d3ee] py-4 font-syne text-sm font-bold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 active:translate-y-0.5 disabled:opacity-60"
+                  >
+                    {registerBusyLabel || '⛓ Register Business On-Chain →'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/dashboard')}
+                    className="w-full inline-flex items-center justify-center neo-border bg-[#a8ff3e] py-4 font-syne text-sm font-bold text-black shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 cursor-pointer"
+                  >
+                    Enter Business Dashboard →
+                  </button>
+                  <p className="text-[11px] text-gray-500">
+                    On-chain attestation (verify-business) is a separate verifier-wallet step — see the admin surface. The business wallet can never verify itself (u100).
+                  </p>
+                </div>
               ) : (
                 <button
                   type="button"
@@ -352,7 +407,7 @@ export const BusinessVerificationPage: React.FC = () => {
                   disabled={isVerifying}
                   className="w-full inline-flex items-center justify-center neo-border bg-[#6B46C1] py-4 font-syne text-sm font-medium text-white shadow-[5px_5px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[7px_7px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 cursor-pointer"
                 >
-                  {isVerifying ? 'Verifying Business via API...' : `Verify ${businessName} Now →`}
+                  {isVerifying ? 'Verifying via POST /verification/businesses/:id/complete…' : `Verify ${businessName} Now →`}
                 </button>
               )}
 

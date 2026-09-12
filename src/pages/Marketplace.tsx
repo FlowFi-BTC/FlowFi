@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { marketplaceApi, fundingApi } from '../lib/api';
+import { marketplaceApi, fundingApi, newIdempotencyKey, transactionsApi, TOKEN_KEY } from '../lib/api';
 import { useUser } from '../context/UserContext';
-import { triggerContractCall } from '../lib/stacks';
+import { signAndBroadcastPrepare } from '../lib/stacks';
+import { friendlyErrorMessage } from '../lib/errors';
 import type { MarketplaceItem, ReceivableStatus } from '../types/api';
+import { ScaleLoader } from 'react-spinners';
 
 // Matching Landing page exactly
 const RailStar = ({ className = '' }: { className?: string }) => (
@@ -25,34 +27,35 @@ const ShieldCheckIcon = () => (
 );
 
 const STATUS_FILTERS = [
-  { id: 'ALL',               label: 'All Receivables' },
-  { id: 'OPEN_FOR_FUNDING',  label: 'Open for Funding' },
-  { id: 'VERIFIED',          label: 'Verified' },
+  { id: 'ALL', label: 'All Receivables' },
+  { id: 'OPEN_FOR_FUNDING', label: 'Open for Funding' },
+  { id: 'VERIFIED', label: 'Verified' },
   { id: 'PENDING_VERIFICATION', label: 'Pending Audit' },
-  { id: 'FUNDED',            label: 'Funded' },
-  { id: 'REPAID',            label: 'Repaid' },
+  { id: 'FUNDED', label: 'Funded' },
+  { id: 'REPAID', label: 'Repaid' },
 ];
 
 const getStatusBadge = (status: ReceivableStatus) => {
   switch (status) {
-    case 'OPEN_FOR_FUNDING':     return { label: 'Open For Funding', bg: '#a8ff3e', text: 'black' };
-    case 'VERIFIED':             return { label: 'Verified',          bg: '#22d3ee', text: 'black' };
-    case 'PENDING_VERIFICATION': return { label: 'Pending Audit',     bg: '#fef08a', text: 'black' };
-    case 'FUNDED':               return { label: 'Funded',            bg: '#c4b5fd', text: 'black' };
-    case 'REPAID':               return { label: 'Repaid',            bg: '#86efac', text: 'black' };
-    case 'DEFAULTED':            return { label: 'Defaulted',         bg: '#ffb6b9', text: 'black' };
-    default:                     return { label: status || 'Draft',   bg: '#e5e7eb', text: 'black' };
+    case 'OPEN_FOR_FUNDING': return { label: 'Open For Funding', bg: '#a8ff3e', text: 'black' };
+    case 'VERIFIED': return { label: 'Verified', bg: '#22d3ee', text: 'black' };
+    case 'PENDING_VERIFICATION': return { label: 'Pending Audit', bg: '#fef08a', text: 'black' };
+    case 'FUNDED': return { label: 'Funded', bg: '#c4b5fd', text: 'black' };
+    case 'REPAID': return { label: 'Repaid', bg: '#86efac', text: 'black' };
+    case 'DEFAULTED': return { label: 'Defaulted', bg: '#ffb6b9', text: 'black' };
+    default: return { label: status || 'Draft', bg: '#e5e7eb', text: 'black' };
   }
 };
 
 export const Marketplace: React.FC = () => {
-  const { token, isVerified } = useUser();
-  const hasToken = !!token || (typeof window !== 'undefined' && !!localStorage.getItem('flowfi_token'));
-  const [items, setItems]               = useState<MarketplaceItem[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [error, setError]               = useState<string | null>(null);
+  const { token, isVerified, role, wallet } = useUser();
+  const hasToken = !!token || (typeof window !== 'undefined' && !!localStorage.getItem(TOKEN_KEY));
+  const normalizedRole = ((role as string) || '').toUpperCase();
+  const [items, setItems] = useState<MarketplaceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('OPEN_FOR_FUNDING');
+  const [error, setError] = useState<string | null>(null);
 
   // Selected item for Mini Page / Detail Modal
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
@@ -98,63 +101,50 @@ export const Marketplace: React.FC = () => {
 
   const handleFundConfirm = async () => {
     if (!selectedItem) return;
+    if (normalizedRole === 'BUSINESS') {
+      setFundingModalError("Business wallets can't fund — switch to an investor profile (u205).");
+      return;
+    }
+    if (!wallet.isConnected) {
+      setFundingModalError('Connect an investor wallet first.');
+      return;
+    }
     setIsFundingSubmitting(true);
     setFundingModalError(null);
     setFundingSuccessTx(null);
 
     const sbtcAmount = customFundSbtc || (Number(selectedItem.amountUsd || 0) / 65000).toFixed(4);
+    const key = newIdempotencyKey();
 
     try {
-      // 1. Prepare Funding Transaction via REST API POST /v1/fundings/prepare
-      const prepRes = await fundingApi.prepareFunding(selectedItem.id, sbtcAmount);
-      const simulatedHash = `0x${Math.random().toString(16).substring(2)}${Date.now().toString(16)}`;
-
+      // 1. Prepare (#29) — backend validates amountSbtc against the REGISTERED target.
+      const prepRes = await fundingApi.prepareFunding(selectedItem.id, sbtcAmount, key);
+      // 2. Wallet signs the exact payload. Cancel → silent return, NO confirm call.
+      let broadcastHash: string;
       try {
-        await triggerContractCall({
-          contractAddress: prepRes.transaction.contractAddress,
-          contractName: prepRes.transaction.contractName,
-          functionName: prepRes.transaction.functionName,
-          functionArgs: prepRes.transaction.arguments,
-          onFinish: async (data: any) => {
-            const broadcastHash = data.txId || simulatedHash;
-            await fundingApi.confirmFunding(prepRes.fundingId, broadcastHash);
-            setFundingSuccessTx(broadcastHash);
-            // Update item in local list
-            updateLocalItemAsFunded(selectedItem.id);
-          },
-          onCancel: async () => {
-            await fundingApi.confirmFunding(prepRes.fundingId, simulatedHash);
-            setFundingSuccessTx(simulatedHash);
-            updateLocalItemAsFunded(selectedItem.id);
-          },
-        });
+        broadcastHash = await signAndBroadcastPrepare(prepRes.transaction);
       } catch {
-        // Fallback simulation for non-extension environment
-        await fundingApi.confirmFunding(prepRes.fundingId, simulatedHash);
-        setFundingSuccessTx(simulatedHash);
-        updateLocalItemAsFunded(selectedItem.id);
+        setIsFundingSubmitting(false);
+        return;
       }
+      // 3. Confirm (#30) with fundingId + operationId, then poll to CONFIRMED.
+      await fundingApi.confirmFunding(
+        { fundingId: prepRes.fundingId, txHash: broadcastHash, operationId: prepRes.operationId },
+        key,
+      );
+      try {
+        await transactionsApi.pollTransaction(broadcastHash);
+      } catch (pollErr) {
+        console.warn('Funding poll note:', pollErr);
+      }
+      setFundingSuccessTx(broadcastHash);
+      // Funding stays OPEN/PENDING until the indexer confirms — refresh instead of
+      // optimistically marking FUNDED so the list matches chain truth.
+      fetchReceivables();
     } catch (err: any) {
-      setFundingModalError(err?.message || 'Failed to execute sBTC funding transaction.');
+      setFundingModalError(friendlyErrorMessage(err, 'Failed to execute sBTC funding transaction.'));
     } finally {
       setIsFundingSubmitting(false);
-    }
-  };
-
-  const updateLocalItemAsFunded = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, status: 'FUNDED' as ReceivableStatus, fundedPercent: 100 }
-          : item
-      )
-    );
-    if (selectedItem && selectedItem.id === id) {
-      setSelectedItem({
-        ...selectedItem,
-        status: 'FUNDED' as ReceivableStatus,
-        fundedPercent: 100,
-      });
     }
   };
 
@@ -169,8 +159,8 @@ export const Marketplace: React.FC = () => {
   });
 
   const totalVolumeUsd = filteredItems.reduce((acc, i) => acc + Number(i.amountUsd || 0), 0);
-  const openCount      = filteredItems.filter((i) => i.status === 'OPEN_FOR_FUNDING').length;
-  const totalSbtc      = (totalVolumeUsd / 65000).toFixed(4);
+  const openCount = filteredItems.filter((i) => i.status === 'OPEN_FOR_FUNDING').length;
+  const totalSbtc = (totalVolumeUsd / 65000).toFixed(4);
 
   return (
     <div className="min-h-screen bg-[#f7f7f7] text-black font-syne selection:bg-[#a8ff3e] selection:text-black">
@@ -317,11 +307,10 @@ export const Marketplace: React.FC = () => {
             <button
               key={f.id}
               onClick={() => setStatusFilter(f.id)}
-              className={`neo-border px-4 py-2 font-syne text-xs font-medium transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                statusFilter === f.id
+              className={`neo-border px-4 py-2 font-syne text-xs font-medium transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${statusFilter === f.id
                   ? 'bg-black text-white -translate-y-0.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
                   : 'bg-white text-gray-700 hover:-translate-y-0.5 hover:bg-[#a8ff3e] hover:text-black'
-              }`}
+                }`}
             >
               {f.label}
             </button>
@@ -369,7 +358,9 @@ export const Marketplace: React.FC = () => {
           {/* Loading state */}
           {loading && (
             <div className="neo-border-thick bg-white p-16 text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] space-y-4">
-              <div className="text-3xl animate-spin inline-block">🔄</div>
+              <div className="text-xl inline-block">
+
+                <ScaleLoader color="#000000" speedMultiplier={0.9} /></div>
               <p className="font-syne text-sm font-medium text-gray-600">
                 Loading marketplace receivables…
               </p>
@@ -405,9 +396,9 @@ export const Marketplace: React.FC = () => {
           {!loading && filteredItems.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredItems.map((item) => {
-                const badge    = getStatusBadge(item.status);
-                const estSbtc  = (Number(item.amountUsd || 0) / 65000).toFixed(4);
-                const isOpen   = item.status === 'OPEN_FOR_FUNDING';
+                const badge = getStatusBadge(item.status);
+                const estSbtc = (Number(item.amountUsd || 0) / 65000).toFixed(4);
+                const isOpen = item.status === 'OPEN_FOR_FUNDING';
 
                 return (
                   <div
@@ -485,11 +476,10 @@ export const Marketplace: React.FC = () => {
                         e.stopPropagation();
                         openMiniPage(item);
                       }}
-                      className={`w-full text-center inline-block neo-border py-2.5 text-xs font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform cursor-pointer ${
-                        isOpen
+                      className={`w-full text-center inline-block neo-border py-2.5 text-xs font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform cursor-pointer ${isOpen
                           ? 'bg-[#a8ff3e] text-black'
                           : 'bg-[#c4b5fd] text-black'
-                      }`}
+                        }`}
                     >
                       {isOpen ? '⚡ View & Fund Receivable →' : 'Inspect Asset Details →'}
                     </button>
@@ -625,7 +615,7 @@ export const Marketplace: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div className="flex justify-between py-1 border-b border-gray-200">
                   <span className="text-gray-500 font-medium">Smart Contract</span>
-                  <span className="font-mono font-bold text-black">sbtc-capital-rail-v2</span>
+                  <span className="font-mono font-bold text-black">flowfi-escrow</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-200">
                   <span className="text-gray-500 font-medium">Settlement Rail</span>
@@ -720,10 +710,10 @@ export const Marketplace: React.FC = () => {
               View Transparency Log →
             </Link>
             <Link
-              to="/cascade-risk"
+              to="/history"
               className="neo-border bg-[#ffb6b9] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
             >
-              Risk & Security Framework →
+              Transparency & Proof Log →
             </Link>
           </div>
         </div>
@@ -751,26 +741,26 @@ export const Marketplace: React.FC = () => {
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Core Pages</h4>
             <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
-              <li><Link to="/dashboard"          className="hover:text-black">Dashboard</Link></li>
-              <li><Link to="/submit-receivable"  className="hover:text-black">Submit Receivable</Link></li>
-              <li><Link to="/funding"            className="hover:text-black">Active Funding</Link></li>
-              <li><Link to="/verification"       className="hover:text-black">Verification Log</Link></li>
-              <li><Link to="/history"            className="hover:text-black">Transparency Log</Link></li>
+              <li><Link to="/dashboard" className="hover:text-black">Dashboard</Link></li>
+              <li><Link to="/dashboard/submit" className="hover:text-black">Submit Receivable</Link></li>
+              <li><Link to="/dashboard/funding" className="hover:text-black">Active Funding</Link></li>
+              <li><Link to="/verification" className="hover:text-black">Verification Log</Link></li>
+              <li><Link to="/history" className="hover:text-black">Transparency Log</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Resources</h4>
             <ul className="space-y-2 text-xs font-medium text-gray-600 font-syne">
-              <li><Link to="/cascade-risk" className="hover:text-black">GitHub</Link></li>
-              <li><Link to="/liquidity"    className="hover:text-black">Contracts</Link></li>
+              <li><Link to="/history" className="hover:text-black">GitHub</Link></li>
+              <li><Link to="/api-docs" className="hover:text-black">Contracts</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Stacks Testnet</h4>
             <div className="space-y-2 text-xs font-syne font-medium text-gray-600">
-              <p>Contract: <span className="text-black font-medium">sbtc-capital-rail-v2</span></p>
+              <p>Contract: <span className="text-black font-medium">flowfi-escrow</span></p>
               <p>Network: <span className="text-black font-medium">Stacks Testnet</span></p>
               <div className="pt-2">
                 <span className="inline-block neo-border bg-[#a8ff3e] px-3 py-1 text-[10px] font-medium text-black">
@@ -784,9 +774,9 @@ export const Marketplace: React.FC = () => {
         <div className="mx-auto max-w-7xl mt-8 pt-6 border-t-2 border-black/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-medium text-gray-500 font-syne">
           <p>© 2026 FlowFi-BTC. Open source MIT protocol.</p>
           <div className="flex items-center gap-4">
-            <Link to="/settings"  className="hover:text-black">Settings</Link>
+            <Link to="/dashboard/settings" className="hover:text-black">Settings</Link>
             <span>•</span>
-            <Link to="/api-docs"  className="hover:text-black">API Docs</Link>
+            <Link to="/api-docs" className="hover:text-black">API Docs</Link>
           </div>
         </div>
       </footer>

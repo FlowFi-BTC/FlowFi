@@ -66,7 +66,7 @@ FlowFi implements an end-to-end 8-stage UI & smart contract workflow:
 
 ## 🛠️ Smart Contract Architecture
 
-The core settlement engine runs on the Stacks Clarity smart contract (`sbtc-capital-rail-v2.clar`).
+The core settlement engine runs on the Stacks Clarity smart contract (`flowfi-escrow.clar`).
 
 ### State Machine Lifecycle
 ```

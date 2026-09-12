@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Card } from '../components/common/Card';
 import { Button } from '../components/common/Button';
 import { useUser } from '../context/UserContext';
-import { receivablesApi, verificationApi } from '../lib/api';
+import { receivablesApi, businessApi } from '../lib/api';
+import { friendlyErrorMessage } from '../lib/errors';
 
 interface Step {
   id: number;
@@ -32,17 +33,20 @@ const RailStar = ({ className = '' }: { className?: string }) => (
 
 export const SubmitReceivablePage: React.FC = () => {
   const navigate = useNavigate();
-  const { wallet, user } = useUser();
+  const { wallet, user, registerBusinessProfile } = useUser();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadNote, setUploadNote] = useState<string | null>(null);
 
   // Clean Form State strictly initialized with logged in user data or empty strings
   const [formData, setFormData] = useState({
     // Step 1: Business
     businessName: user?.businessProfile?.companyName || '',
     businessRegNumber: user?.businessProfile?.registrationNumber || '',
+    businessCountry: (user?.businessProfile as any)?.country || '',
     representativeName: '',
     representativeEmail: '',
     walletAddress: wallet.address || user?.walletAddress || '',
@@ -76,6 +80,7 @@ export const SubmitReceivablePage: React.FC = () => {
         ...prev,
         businessName: prev.businessName || user.businessProfile?.companyName || '',
         businessRegNumber: prev.businessRegNumber || user.businessProfile?.registrationNumber || '',
+        businessCountry: (prev as any).businessCountry || (user.businessProfile as any)?.country || '',
       }));
     }
     if (wallet.address) {
@@ -97,12 +102,24 @@ export const SubmitReceivablePage: React.FC = () => {
     if (!file) return;
 
     setStepError(null);
+    // Client-side allowlist mirrors backend ALLOWED_FILE_TYPES + 10 MB cap
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+    if (!allowed.includes(file.type)) {
+      setStepError('Upload a PDF, JPEG, PNG or WebP invoice file.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setStepError('That file exceeds the 10 MB upload limit.');
+      return;
+    }
     try {
       const arrayBuffer = await file.arrayBuffer();
       const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashHex = '0x' + hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 
+      setSelectedFile(file);
+      setUploadNote(null);
       setFormData((prev) => ({
         ...prev,
         docFileName: file.name,
@@ -118,6 +135,10 @@ export const SubmitReceivablePage: React.FC = () => {
     if (currentStep === 1) {
       if (!formData.businessName.trim()) {
         setStepError('Please enter your business name.');
+        return false;
+      }
+      if (!user?.businessProfile && (formData as any).businessCountry && !/^[A-Za-z]{2}$/.test(((formData as any).businessCountry as string).trim())) {
+        setStepError('Business country must be a 2-letter code (e.g. NG) — required for on-chain registration.');
         return false;
       }
       if (!formData.walletAddress.trim()) {
@@ -146,9 +167,14 @@ export const SubmitReceivablePage: React.FC = () => {
         setStepError('Please enter the debtor company name.');
         return false;
       }
+      // Contract has no optional fields — ISO-2 country is required before register.
+      if (formData.debtorCountry && !/^[A-Za-z]{2}$/.test(formData.debtorCountry.trim())) {
+        setStepError('Debtor country must be a 2-letter code (e.g. NG).');
+        return false;
+      }
     } else if (currentStep === 4) {
-      if (!formData.docHash) {
-        setStepError('Please upload an invoice document to compute its SHA-256 digest.');
+      if (!selectedFile) {
+        setStepError('Please upload an invoice document — its SHA-256 goes on-chain at registration.');
         return false;
       }
     }
@@ -163,22 +189,65 @@ export const SubmitReceivablePage: React.FC = () => {
     } else {
       setIsSubmitting(true);
       setApiError(null);
+      setUploadNote(null);
       try {
-        // 1. Submit Receivable to REST API /v1/receivables
+        // Ensure the business profile exists first (#6). Country is collected now
+        // so the later on-chain register-business never blocks on COUNTRY_REQUIRED.
+        if (!user?.businessProfile) {
+          try {
+            await registerBusinessProfile({
+              companyName: formData.businessName.trim(),
+              registrationNumber: formData.businessRegNumber.trim() || undefined,
+              country: (formData as any).businessCountry?.trim()?.toUpperCase() || undefined,
+            });
+          } catch (bizErr: any) {
+            const code = (bizErr as any)?.code;
+            // PROFILE_EXISTS → fall through to update path inside context; else surface
+            if (code !== 'PROFILE_EXISTS' && code !== 'DUPLICATE_ENTRY') {
+              const existing = await businessApi.getMe().catch(() => null);
+              if (!existing) throw bizErr;
+            }
+          }
+        } else if ((formData as any).businessCountry?.trim() && !(user.businessProfile as any)?.country) {
+          // Backfill country via PATCH /businesses/me when it was missing
+          try {
+            await businessApi.updateMe({ country: (formData as any).businessCountry.trim().toUpperCase() });
+          } catch {
+            // non-fatal — register/prepare will surface COUNTRY_REQUIRED with guidance
+          }
+        }
+
+        // 1. Create the OFF-CHAIN record (#11) — includes debtor so register/prepare
+        //    never fails DEBTOR_REQUIRED immediately after submit.
         const created = await receivablesApi.submit({
           title: formData.invoiceTitle,
           description: formData.description || `Receivable for ${formData.debtorName} (Invoice ${formData.invoiceNumber})`,
           invoiceNumber: formData.invoiceNumber,
           amountUsd: parseFloat(formData.amountUsd),
           dueDate: new Date(formData.dueDate).toISOString(),
+          debtor: {
+            companyName: formData.debtorName.trim(),
+            country: formData.debtorCountry.trim()?.toUpperCase() || undefined,
+            registrationNumber: formData.debtorRegNumber.trim() || undefined,
+          },
         });
 
-        // 2. Initiate Verification via /v1/verification/receivables/:id
-        try {
-          await verificationApi.initiate(created.id, 'PILOT_REVIEW');
-        } catch (verErr) {
-          console.warn('Verification initiation note:', verErr);
+        // 2. Upload invoice evidence (#18) — requires the receivable to exist,
+        //    so this MUST happen after create, not before. Only the SHA-256 goes on-chain.
+        if (selectedFile) {
+          try {
+            await receivablesApi.uploadDocument(created.id, selectedFile);
+          } catch (upErr: any) {
+            setUploadNote(
+              `${friendlyErrorMessage(upErr, 'Document upload failed.')} You can retry the upload from the receivable detail page — registration stays blocked until DOCUMENT_REQUIRED is satisfied.`,
+            );
+          }
         }
+
+        // NOTE: verification is business-level + one-time (PAGES_SPEC §7). A new
+        // receivable from a VERIFIED business is already business-verified — there
+        // is no per-receivable "wait for reviewer" step. The next step is
+        // Register On-Chain (#16/#17) from the detail page.
 
         setFormData((prev) => ({
           ...prev,
@@ -189,7 +258,7 @@ export const SubmitReceivablePage: React.FC = () => {
         if (err?.code === 'FORBIDDEN' || err?.message?.includes('Role')) {
           setApiError('Access denied: You must be registered with BUSINESS role to submit receivables. Please complete profile registration in Get Started.');
         } else {
-          setApiError(err?.message || 'Failed to submit receivable to API server.');
+          setApiError(friendlyErrorMessage(err, 'Failed to submit receivable to API server.'));
         }
       } finally {
         setIsSubmitting(false);
@@ -216,8 +285,17 @@ export const SubmitReceivablePage: React.FC = () => {
             Receivable Submitted Successfully!
           </h1>
           <p className="text-gray-600 text-[13px] font-medium max-w-[440px] mx-auto">
-            Your receivable for <span className="text-black font-bold">{formData.businessName}</span> has been submitted to the API and queued for verification.
+            Your off-chain receivable record was created{uploadNote ? ' but the invoice upload needs attention' : ''}.
+            {user?.businessProfile?.verificationStatus === 'VERIFIED'
+              ? ' The next step is Register On-Chain from its detail page — that is what makes it fundable.'
+              : ' Once your business is VERIFIED, use Register On-Chain from its detail page to make it fundable.'}
           </p>
+
+          {uploadNote && (
+            <div className="neo-border bg-[#fef08a] p-3 text-left text-[12px] font-bold text-black">
+              ⚠️ {uploadNote}
+            </div>
+          )}
 
           <div className="neo-border bg-[#f7f7f7] p-4 font-syne text-[13px] text-left space-y-2">
             <div className="flex justify-between border-b border-black/10 pb-1.5">
@@ -239,8 +317,8 @@ export const SubmitReceivablePage: React.FC = () => {
           </div>
 
           <div className="pt-4 flex flex-col sm:flex-row justify-center gap-3">
-            <Button variant="primary" onClick={() => navigate('/verification')}>
-              Track Verification Status →
+            <Button variant="primary" onClick={() => navigate(`/receivables/${formData.submittedId}`)}>
+              Register On-Chain →
             </Button>
             <Button variant="outline" onClick={() => navigate('/dashboard')}>
               Return to Dashboard
@@ -370,6 +448,23 @@ export const SubmitReceivablePage: React.FC = () => {
 
               <div>
                 <label className="block text-[13px] font-bold text-black mb-1.5">
+                  Business Country (ISO-2) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={(formData as any).businessCountry}
+                  onChange={(e) => handleChange('businessCountry', e.target.value.toUpperCase())}
+                  maxLength={2}
+                  className="w-full neo-border bg-[#f7f7f7] px-4 py-2.5 text-[13px] font-syne font-medium text-black focus:bg-white focus:outline-none"
+                  placeholder="NG"
+                />
+                <p className="mt-1 text-[11px] text-gray-500">
+                  Required before on-chain register-business (e.g. NG). Already stored profiles skip this.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-[13px] font-bold text-black mb-1.5">
                   Wallet Address <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -491,15 +586,17 @@ export const SubmitReceivablePage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[13px] font-bold text-black mb-1.5">
-                    Debtor Country
+                    Debtor Country (ISO-2) <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.debtorCountry}
-                    onChange={(e) => handleChange('debtorCountry', e.target.value)}
+                    onChange={(e) => handleChange('debtorCountry', e.target.value.toUpperCase())}
+                    maxLength={2}
                     className="w-full neo-border bg-[#f7f7f7] px-4 py-2.5 text-[13px] font-medium text-black focus:bg-white focus:outline-none"
-                    placeholder="Jurisdiction / Country"
+                    placeholder="NG"
                   />
+                  <p className="mt-1 text-[11px] text-gray-500">2-letter code — required for on-chain registration.</p>
                 </div>
 
                 <div>
@@ -536,14 +633,17 @@ export const SubmitReceivablePage: React.FC = () => {
                 </div>
                 <div>
                   <label className="cursor-pointer inline-block neo-border bg-white px-4 py-2 text-xs font-bold text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5">
-                    Upload Invoice File (PDF / Image)
+                    Upload Invoice File (PDF / JPEG / PNG / WebP, max 10 MB)
                     <input
                       type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/jpeg,image/png,image/webp"
                       onChange={handleFileChange}
                       className="hidden"
                     />
                   </label>
+                  <p className="mt-2 text-[11px] font-medium text-gray-500">
+                    Preview hash is computed in-browser; the file is uploaded to POST /receivables/:id/documents after the record is created (Step 5).
+                  </p>
                 </div>
                 {formData.docFileName ? (
                   <div className="text-xs font-bold text-black mt-2">

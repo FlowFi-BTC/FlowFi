@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useWallet } from '../../../hooks/useWallet';
-import { fundingApi } from '../../../lib/api';
-import { triggerContractCall } from '../../../lib/stacks';
+import { fundingApi, newIdempotencyKey, transactionsApi } from '../../../lib/api';
+import { signAndBroadcastPrepare } from '../../../lib/stacks';
+import { friendlyErrorMessage } from '../../../lib/errors';
 
 interface FundingModalProps {
   receivable: {
@@ -23,57 +24,83 @@ export const FundingModal: React.FC<FundingModalProps> = ({
   onConfirmFund,
 }) => {
   const { wallet, connect } = useWallet();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [amountInput, setAmountInput] = useState('');
+  const [phase, setPhase] = useState<'idle' | 'preparing' | 'signing' | 'confirming' | 'polling' | 'done'>('idle');
+  const [preparedSbtc, setPreparedSbtc] = useState<string | null>(null);
   const [txHash, setTxHash] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const recId = String(receivable.id);
-  const sbtcAmount = '0.45';
+  const busy = phase !== 'idle' && phase !== 'done';
+
+  const phaseHint =
+    phase === 'preparing'
+      ? 'Validating against the registered funding target…'
+      : phase === 'signing'
+      ? 'Waiting for wallet signature… (cancel returns here silently)'
+      : phase === 'confirming'
+      ? 'Recording broadcast…'
+      : phase === 'polling'
+      ? 'Confirming on-chain… (CONFIRMING → CONFIRMED)'
+      : null;
 
   const handleConfirm = async () => {
-    setIsSubmitting(true);
-    try {
-      // 1. Prepare Funding Transaction via API endpoint POST /v1/fundings/prepare
-      const prepRes = await fundingApi.prepareFunding(recId, sbtcAmount);
-
-      // 2. Trigger Stacks Wallet contract call or fallback broadcast hash
-      const simulatedHash = `0x${Math.random().toString(16).substring(2)}${Date.now().toString(16)}`;
-
-      try {
-        await triggerContractCall({
-          contractAddress: prepRes.transaction.contractAddress,
-          contractName: prepRes.transaction.contractName,
-          functionName: prepRes.transaction.functionName,
-          functionArgs: prepRes.transaction.arguments,
-          onFinish: async (data: any) => {
-            const broadcastHash = data.txId || simulatedHash;
-            await fundingApi.confirmFunding(prepRes.fundingId, broadcastHash);
-            setTxHash(broadcastHash);
-            if (onConfirmFund) await onConfirmFund(wallet.address || 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG');
-            setIsSuccess(true);
-          },
-          onCancel: async () => {
-            // User cancelled wallet popup, fallback to API confirmation
-            await fundingApi.confirmFunding(prepRes.fundingId, simulatedHash);
-            setTxHash(simulatedHash);
-            if (onConfirmFund) await onConfirmFund(wallet.address || 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG');
-            setIsSuccess(true);
-          },
-        });
-      } catch {
-        // Fallback for non-extension environments
-        await fundingApi.confirmFunding(prepRes.fundingId, simulatedHash);
-        setTxHash(simulatedHash);
-        if (onConfirmFund) await onConfirmFund(wallet.address || 'ST2CY5V39NHDPWSXMW9QDT3HC3GD6Q6XX4CFRK9AG');
-        setIsSuccess(true);
-      }
-    } catch (err) {
-      console.error('Funding failed:', err);
-    } finally {
-      setIsSubmitting(false);
+    setError(null);
+    const requested = amountInput.trim();
+    if (!requested || Number(requested) <= 0) {
+      setError('Enter the sBTC amount to fund.');
+      return;
     }
+    const key = newIdempotencyKey();
+    setPhase('preparing');
+    try {
+      // 1. Prepare (#29) — backend validates amountSbtc against the REGISTERED target.
+      //    Display prepared.fundingAmount as truth, not the typed input.
+      const prepRes = await fundingApi.prepareFunding(recId, requested, key);
+      setPreparedSbtc(prepRes.fundingAmount?.sbtc ?? prepRes.amountSbtc);
+
+      // 2. Wallet signs the exact registry-derived payload (amount is NOT an argument).
+      setPhase('signing');
+      let broadcastHash: string;
+      try {
+        broadcastHash = await signAndBroadcastPrepare(prepRes.transaction);
+      } catch {
+        // user cancelled — silent return, NO confirm call
+        setPhase('idle');
+        return;
+      }
+
+      // 3. Confirm (#30) with fundingId + operationId so the backend resolves the exact intent.
+      setPhase('confirming');
+      await fundingApi.confirmFunding(
+        { fundingId: prepRes.fundingId, txHash: broadcastHash, operationId: prepRes.operationId },
+        key,
+      );
+      setTxHash(broadcastHash);
+
+      // 4. Poll until the indexer flips PENDING → ACTIVE / FUNDED.
+      setPhase('polling');
+      try {
+        await transactionsApi.pollTransaction(broadcastHash);
+      } catch (pollErr) {
+        console.warn('Funding confirmation polling note:', pollErr);
+      }
+
+      setPhase('done');
+      if (onConfirmFund) await onConfirmFund(wallet.address || '');
+    } catch (err: any) {
+      setError(friendlyErrorMessage(err));
+      setPhase('idle');
+    }
+  };
+
+  const closeAndReset = () => {
+    setPhase('idle');
+    setError(null);
+    setPreparedSbtc(null);
+    onClose();
   };
 
   return (
@@ -90,28 +117,28 @@ export const FundingModal: React.FC<FundingModalProps> = ({
             </h3>
           </div>
           <button
-            onClick={onClose}
+            onClick={closeAndReset}
             className="h-9 w-9  neo-border bg-[#f7f7f7] text-black font-bold flex items-center justify-center hover:bg-gray-200 transition-transform active:translate-y-0.5"
           >
             ✕
           </button>
         </div>
 
-        {isSuccess ? (
+        {phase === 'done' ? (
           <div className="py-8 text-center space-y-4 font-syne">
             <div className="mx-auto flex h-16 w-16 items-center justify-center  bg-[#a8ff3e] neo-border text-2xl font-black">
               ✓
             </div>
-            <h4 className="text-xl font-black text-black">Funding Broadcasted & Confirmed!</h4>
+            <h4 className="text-xl font-black text-black">Funding Broadcasted!</h4>
             <p className="text-xs font-bold text-gray-600">
-              Transaction hash recorded via POST /v1/fundings/confirm:
+              Recorded via POST /v1/fundings/confirm — polling confirmation flips funding to FUNDED.
             </p>
-            <div className="bg-[#f7f7f7] neo-border rounded-xl p-3 text-[11px] font-mono text-black font-bold truncate">
+            <div className="bg-[#f7f7f7] neo-border rounded-xl p-3 text-[11px] font-mono text-black font-bold break-all">
               {txHash}
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={closeAndReset}
               className="mt-2  neo-border bg-[#a8ff3e] px-6 py-2.5 text-xs font-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]"
             >
               Done & Close
@@ -130,29 +157,42 @@ export const FundingModal: React.FC<FundingModalProps> = ({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 font-syne">
-                <div>
-                  <span className="text-[11px] text-gray-500 font-syne font-bold block">
-                    Capital Amount
-                  </span>
-                  <span className="text-lg font-black text-black">
-                    {sbtcAmount} sBTC
-                  </span>
-                  <span className="text-[11px] text-gray-600 block">
-                    (${receivable.amountUsd || '45,000'} USD)
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-[11px] text-gray-500 font-syne font-bold block">
-                    Est. Annualized APY
-                  </span>
-                  <span className="text-lg font-black text-[#6B46C1]">
-                    9.8% APY
-                  </span>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-black mb-1.5">
+                  sBTC amount (validated against the registered target)
+                </label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0"
+                  value={amountInput}
+                  onChange={(e) => setAmountInput(e.target.value)}
+                  placeholder="0.01"
+                  disabled={busy}
+                  className="w-full neo-border bg-white px-4 py-2.5 text-sm font-mono font-bold text-black focus:outline-none focus:ring-2 focus:ring-[#6B46C1]"
+                />
+                {preparedSbtc && (
+                  <p className="mt-1.5 text-[11px] font-bold text-[#6B46C1]">
+                    Authoritative target: {preparedSbtc} sBTC — the wallet signs exactly this.
+                  </p>
+                )}
+                <p className="mt-1 text-[11px] text-gray-600">
+                  {receivable.title || ''} {receivable.amountUsd ? `($${receivable.amountUsd} USD)` : ''}
+                </p>
               </div>
             </div>
+
+            {error && (
+              <div className="neo-border bg-[#ffb6b9] p-3 text-xs font-bold text-black flex items-center justify-between gap-2">
+                <span>⚠️ {error}</span>
+                <button onClick={() => setError(null)} className="font-bold">✕</button>
+              </div>
+            )}
+            {phaseHint && (
+              <div className="neo-border bg-[#fef08a] p-3 text-xs font-bold text-black animate-pulse">
+                {phaseHint}
+              </div>
+            )}
 
             {/* Wallet Status Banner */}
             {!wallet.isConnected ? (
@@ -161,7 +201,7 @@ export const FundingModal: React.FC<FundingModalProps> = ({
                   <span>⚠️ Wallet Not Connected</span>
                 </div>
                 <p className="font-semibold text-gray-700">
-                  Please connect your Stacks wallet to execute the smart contract transfer.
+                  Please connect an INVESTOR wallet to execute the funding transfer (≠ business wallet, else u205).
                 </p>
                 <button
                   type="button"
@@ -196,8 +236,8 @@ export const FundingModal: React.FC<FundingModalProps> = ({
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
+                onClick={closeAndReset}
+                disabled={busy}
                 className="w-1/3 py-3  neo-border bg-[#f7f7f7] font-extrabold text-xs text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-200 transition-transform active:translate-y-0.5"
               >
                 Cancel
@@ -206,13 +246,13 @@ export const FundingModal: React.FC<FundingModalProps> = ({
               <button
                 type="button"
                 onClick={handleConfirm}
-                disabled={isSubmitting}
-                className="w-2/3 py-3  neo-border bg-[#a8ff3e] font-extrabold text-xs text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#96f028] transition-transform active:translate-y-0.5 flex items-center justify-center gap-2"
+                disabled={busy || !wallet.isConnected}
+                className="w-2/3 py-3  neo-border bg-[#a8ff3e] font-extrabold text-xs text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#96f028] transition-transform active:translate-y-0.5 flex items-center justify-center gap-2 disabled:opacity-60"
               >
-                {isSubmitting ? (
+                {busy ? (
                   <>
                     <span className="h-3 w-3  border-2 border-black border-t-transparent animate-spin" />
-                    <span>Broadcasting Tx...</span>
+                    <span>{phaseHint || 'Broadcasting Tx...'}</span>
                   </>
                 ) : (
                   <span>⚡ Prepare & Fund sBTC</span>

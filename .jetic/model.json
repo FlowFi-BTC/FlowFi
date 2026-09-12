@@ -1,0 +1,1525 @@
+{
+  "version": "0.3",
+  "generatedAt": "2026-09-11T06:14:37.184Z",
+  "project": {
+    "name": "sbtc-capital-rail",
+    "language": "typescript",
+    "framework": "express"
+  },
+  "environments": [
+    {
+      "name": "local",
+      "baseUrl": "http://localhost:4000"
+    },
+    {
+      "name": "production",
+      "baseUrl": "https://api.flowfi.xyz"
+    }
+  ],
+  "securitySchemes": {
+    "bearerAuth": {
+      "type": "http",
+      "scheme": "bearer",
+      "bearerFormat": "JWT",
+      "description": "JWT from POST /v1/auth/verify, stored as flowfi_token, sent as Authorization: Bearer <token>"
+    }
+  },
+  "resources": [],
+  "endpoints": [
+    {
+      "id": "9ddd109e-9c8b-442f-9308-acfe00d4797a",
+      "method": "POST",
+      "path": "/v1/auth/challenge",
+      "name": "Request Wallet Challenge",
+      "summary": "Request wallet challenge",
+      "description": "Request wallet challenge for signature login. UI: Connect Wallet click. Returns challengeId, message, nonce, expiresAt.",
+      "tags": [
+        "auth"
+      ],
+      "resource": "User",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "walletAddress": {
+            "type": "string",
+            "required": true,
+            "description": "Stacks wallet address",
+            "example": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Challenge issued",
+          "schema": {
+            "challengeId": "string",
+            "message": "string",
+            "nonce": "string",
+            "expiresAt": "string (date-time)"
+          }
+        },
+        "400": {
+          "contentType": "application/json",
+          "description": "Invalid wallet address",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string",
+            "error.message": "string"
+          }
+        },
+        "422": {
+          "contentType": "application/json",
+          "description": "Validation error",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "challengeId",
+          "responseField": "challengeId"
+        },
+        {
+          "variable": "challengeMessage",
+          "responseField": "message"
+        },
+        {
+          "variable": "challengeNonce",
+          "responseField": "nonce"
+        }
+      ]
+    },
+    {
+      "id": "869d31b3-52b9-4b5b-8f31-2e6f461c9ad5",
+      "method": "POST",
+      "path": "/v1/auth/verify",
+      "name": "Verify Wallet Signature",
+      "summary": "Verify wallet signature and login",
+      "description": "Verify wallet signature and login. UI: after wallet signs challenge message. Returns JWT token and user.",
+      "tags": [
+        "auth"
+      ],
+      "resource": "User",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "challengeId": {
+            "type": "string",
+            "required": true
+          },
+          "walletAddress": {
+            "type": "string",
+            "required": true,
+            "example": "SP3FBR2AGK5H9QBDH3EEN6DF8EK8JY7RX8QJ5SVTE"
+          },
+          "signature": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Login success, returns token and user",
+          "schema": {
+            "token": "string",
+            "user.id": "string",
+            "user.walletAddress": "string",
+            "user.role": "string"
+          }
+        },
+        "400": {
+          "contentType": "application/json",
+          "description": "Invalid challenge",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        },
+        "401": {
+          "contentType": "application/json",
+          "description": "Invalid signature",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "accessToken",
+          "responseField": "token"
+        },
+        {
+          "variable": "userId",
+          "responseField": "user.id"
+        },
+        {
+          "variable": "userRole",
+          "responseField": "user.role"
+        },
+        {
+          "variable": "walletAddress",
+          "responseField": "user.walletAddress"
+        }
+      ]
+    },
+    {
+      "id": "d0a97262-857e-42c0-aa79-1fb9fefc43f0",
+      "method": "GET",
+      "path": "/v1/auth/me",
+      "name": "Restore User Session",
+      "summary": "Restore user session",
+      "description": "Restore user session. UI: App load to restore session and select workspace. Requires Bearer token.",
+      "tags": [
+        "auth"
+      ],
+      "resource": "User",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Current user with profiles",
+          "schema": {
+            "id": "string",
+            "walletAddress": "string",
+            "role": "string",
+            "profileComplete": "boolean",
+            "businessProfile.id": "string",
+            "investorProfile.id": "string"
+          }
+        },
+        "401": {
+          "contentType": "application/json",
+          "description": "Missing or expired token",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "3b2fcbed-303d-43de-be8e-139f2ad75170",
+      "method": "POST",
+      "path": "/v1/onboarding",
+      "name": "Select Role",
+      "summary": "Select onboarding role",
+      "description": "Select role BUSINESS or INVESTOR. UI: Role Selection Screen. Returns user and nextStep.",
+      "tags": [
+        "onboarding"
+      ],
+      "resource": "User",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "role": {
+            "type": "string",
+            "required": true,
+            "enum": [
+              "BUSINESS",
+              "INVESTOR"
+            ]
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Role selected",
+          "schema": {
+            "user.id": "string",
+            "user.role": "string",
+            "nextStep": "string"
+          }
+        },
+        "401": {
+          "contentType": "application/json",
+          "description": "Unauthorized",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "userRole",
+          "responseField": "user.role"
+        },
+        {
+          "variable": "nextStep",
+          "responseField": "nextStep"
+        }
+      ]
+    },
+    {
+      "id": "5c19d617-8036-416f-8e72-d509c4795df8",
+      "method": "GET",
+      "path": "/v1/onboarding/status",
+      "name": "Get Onboarding Status",
+      "summary": "Get onboarding status",
+      "description": "Get onboarding status for routing guard. Returns role, profileComplete, verificationStatus, nextStep.",
+      "tags": [
+        "onboarding"
+      ],
+      "resource": "User",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Onboarding status",
+          "schema": {
+            "role": "string",
+            "profileComplete": "boolean",
+            "verificationRequired": "boolean",
+            "verificationStatus": "string",
+            "nextStep": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "nextStep",
+          "responseField": "nextStep"
+        },
+        {
+          "variable": "userRole",
+          "responseField": "role"
+        },
+        {
+          "variable": "verificationStatus",
+          "responseField": "verificationStatus"
+        }
+      ]
+    },
+    {
+      "id": "12b09211-2103-4874-b7cf-f13b9ba1be60",
+      "method": "POST",
+      "path": "/v1/businesses",
+      "name": "Register Business Profile",
+      "summary": "Register business profile",
+      "description": "Register business profile. UI: Business Profile Creation Form. 409 PROFILE_EXISTS if already created.",
+      "tags": [
+        "businesses"
+      ],
+      "resource": "Business",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "companyName": {
+            "type": "string",
+            "required": true,
+            "example": "ABC Logistics Ltd"
+          },
+          "registrationNumber": {
+            "type": "string",
+            "required": false
+          },
+          "website": {
+            "type": "string",
+            "required": false
+          },
+          "description": {
+            "type": "string",
+            "required": false
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "contentType": "application/json",
+          "description": "Business created",
+          "schema": {
+            "id": "string",
+            "companyName": "string",
+            "registrationNumber": "string",
+            "verificationStatus": "string",
+            "createdAt": "string"
+          }
+        },
+        "409": {
+          "contentType": "application/json",
+          "description": "Profile already exists",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "businessId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "68683f25-9497-4e02-aafd-4951132be77f",
+      "method": "GET",
+      "path": "/v1/businesses/me",
+      "name": "Get My Business Profile",
+      "summary": "Get my business profile",
+      "description": "Get my business profile. UI: Business Settings page.",
+      "tags": [
+        "businesses"
+      ],
+      "resource": "Business",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Business profile",
+          "schema": {
+            "id": "string",
+            "companyName": "string",
+            "verificationStatus": "string",
+            "receivablesCount": "number",
+            "createdAt": "string"
+          }
+        },
+        "404": {
+          "contentType": "application/json",
+          "description": "No business profile",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "businessId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "b5b6300c-b545-410c-abe6-492e1b16a892",
+      "method": "PATCH",
+      "path": "/v1/businesses/me",
+      "name": "Update Business Profile",
+      "summary": "Update business profile",
+      "description": "Update my business profile (website, description, companyName). UI: Settings save.",
+      "tags": [
+        "businesses"
+      ],
+      "resource": "Business",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": false,
+        "fields": {
+          "companyName": {
+            "type": "string",
+            "required": false
+          },
+          "website": {
+            "type": "string",
+            "required": false
+          },
+          "description": {
+            "type": "string",
+            "required": false
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Business updated",
+          "schema": {
+            "id": "string",
+            "companyName": "string",
+            "website": "string",
+            "verificationStatus": "string",
+            "updatedAt": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "b1f32934-ed98-4ac8-be69-e3736188e77e",
+      "method": "POST",
+      "path": "/v1/investors",
+      "name": "Register Investor Profile",
+      "summary": "Register investor profile",
+      "description": "Register investor profile. UI: Capital Provider Profile Creation Form.",
+      "tags": [
+        "investors"
+      ],
+      "resource": "Investor",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "displayName": {
+            "type": "string",
+            "required": true,
+            "example": "Prudence Capital"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "contentType": "application/json",
+          "description": "Investor created",
+          "schema": {
+            "id": "string",
+            "userId": "string",
+            "displayName": "string",
+            "createdAt": "string"
+          }
+        },
+        "409": {
+          "contentType": "application/json",
+          "description": "Profile already exists",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "investorId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "316ecdd8-c457-46ae-91cd-3cd5923d14ad",
+      "method": "GET",
+      "path": "/v1/investors/me",
+      "name": "Get My Investor Profile",
+      "summary": "Get my investor profile",
+      "description": "Get my investor profile. UI: Investor Settings and Dashboard Summary.",
+      "tags": [
+        "investors"
+      ],
+      "resource": "Investor",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Investor profile",
+          "schema": {
+            "id": "string",
+            "displayName": "string",
+            "fundingsCount": "number",
+            "activeFundings": "number",
+            "createdAt": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "investorId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "bf61378d-f847-4096-a435-f5c80bcdf72f",
+      "method": "PATCH",
+      "path": "/v1/investors/me",
+      "name": "Update Investor Profile",
+      "summary": "Update investor profile",
+      "description": "Update my investor profile displayName. UI: Investor Settings save. NOTE: not in FRONTEND_API_DOCS but implemented in src/lib/api.ts investorApi.updateMe to mirror PATCH /v1/businesses/me.",
+      "tags": [
+        "investors"
+      ],
+      "resource": "Investor",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "displayName": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Investor updated",
+          "schema": {
+            "id": "string",
+            "displayName": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "115dc3b8-3966-4571-8b80-64c7c87ad504",
+      "method": "POST",
+      "path": "/v1/receivables",
+      "name": "Submit Receivable",
+      "summary": "Submit receivable",
+      "description": "Submit receivable invoice. BUSINESS role required. UI: Submit Receivable modal.",
+      "tags": [
+        "receivables"
+      ],
+      "resource": "Receivable",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "title": {
+            "type": "string",
+            "required": true
+          },
+          "description": {
+            "type": "string",
+            "required": true
+          },
+          "invoiceNumber": {
+            "type": "string",
+            "required": false
+          },
+          "amountUsd": {
+            "type": "number",
+            "required": true,
+            "min": 0
+          },
+          "dueDate": {
+            "type": "string",
+            "format": "date-time",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "contentType": "application/json",
+          "description": "Receivable submitted",
+          "schema": {
+            "id": "string",
+            "title": "string",
+            "status": "string",
+            "verificationStatus": "string",
+            "createdAt": "string"
+          }
+        },
+        "403": {
+          "contentType": "application/json",
+          "description": "BUSINESS role required",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "receivableId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "f330f072-6b01-4522-801e-99801ddfffee",
+      "method": "GET",
+      "path": "/v1/receivables/me",
+      "name": "Get My Receivables",
+      "summary": "Get my receivables",
+      "description": "Get my receivables paginated. BUSINESS role. UI: Business Receivables Dashboard.",
+      "tags": [
+        "receivables"
+      ],
+      "resource": "Receivable",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "page",
+          "in": "query",
+          "type": "number",
+          "required": false,
+          "default": 1
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "number",
+          "required": false,
+          "default": 20
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Paginated receivables",
+          "schema": {
+            "items": "array",
+            "pagination.page": "number",
+            "pagination.total": "number"
+          }
+        }
+      }
+    },
+    {
+      "id": "a8f68d4c-469d-4af4-87a0-a1948e352908",
+      "method": "GET",
+      "path": "/v1/receivables/:id",
+      "name": "Get Receivable Details",
+      "summary": "Get receivable details",
+      "description": "Get receivable details by id. Public. UI: Opportunity Detail Page. Captures status for conditional settlement routing.",
+      "tags": [
+        "receivables"
+      ],
+      "resource": "Receivable",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Receivable details",
+          "schema": {
+            "id": "string",
+            "title": "string",
+            "status": "string",
+            "verificationStatus": "string",
+            "business.companyName": "string"
+          }
+        },
+        "404": {
+          "contentType": "application/json",
+          "description": "Not found",
+          "schema": {
+            "success": "boolean",
+            "error.code": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "receivableId",
+          "responseField": "id"
+        },
+        {
+          "variable": "receivableStatus",
+          "responseField": "status"
+        },
+        {
+          "variable": "receivableVerification",
+          "responseField": "verificationStatus"
+        }
+      ]
+    },
+    {
+      "id": "3fd2b233-45b3-4751-a48c-8d4b6c6a4d87",
+      "method": "GET",
+      "path": "/v1/receivables/:id/activity",
+      "name": "Get Receivable Activity",
+      "summary": "Get receivable activity",
+      "description": "Get receivable public activity timeline. Public. UI: Transparency timeline.",
+      "tags": [
+        "receivables"
+      ],
+      "resource": "Receivable",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Activity timeline",
+          "schema": {
+            "items": "array"
+          }
+        }
+      }
+    },
+    {
+      "id": "0209b2d0-1e78-4baf-8979-9a85c1dc21ff",
+      "method": "POST",
+      "path": "/v1/receivables/:id/default",
+      "name": "Flag Receivable Defaulted",
+      "summary": "Flag receivable defaulted",
+      "description": "Flag receivable as defaulted with reason. Auth required.",
+      "tags": [
+        "receivables"
+      ],
+      "resource": "Receivable",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "reason": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Marked defaulted",
+          "schema": {
+            "receivableId": "string",
+            "status": "string",
+            "transaction.txHash": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "a8ec6fbd-2497-4626-8634-af71fe85ad33",
+      "method": "GET",
+      "path": "/v1/marketplace/receivables",
+      "name": "List Marketplace Receivables",
+      "summary": "List marketplace receivables",
+      "description": "List public marketplace receivables with status, pagination, search. Public. UI: Explore Receivables grid.",
+      "tags": [
+        "marketplace"
+      ],
+      "resource": "Marketplace",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "status",
+          "in": "query",
+          "type": "string",
+          "required": false
+        },
+        {
+          "name": "page",
+          "in": "query",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "number",
+          "required": false
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "type": "string",
+          "required": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Marketplace list",
+          "schema": {
+            "items": "array",
+            "pagination.total": "number"
+          }
+        }
+      }
+    },
+    {
+      "id": "2591608d-441e-4d03-9f55-9ad6b95eb77a",
+      "method": "POST",
+      "path": "/v1/verification/receivables/:receivableId",
+      "name": "Initiate Verification",
+      "summary": "Initiate verification",
+      "description": "Initiate receivable verification. Auth required. Body method defaults PILOT_REVIEW.",
+      "tags": [
+        "verification"
+      ],
+      "resource": "Verification",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "receivableId",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": false,
+        "fields": {
+          "method": {
+            "type": "string",
+            "required": false,
+            "default": "PILOT_REVIEW"
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "contentType": "application/json",
+          "description": "Verification initiated",
+          "schema": {
+            "id": "string",
+            "status": "string",
+            "method": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "verificationId",
+          "responseField": "id"
+        }
+      ]
+    },
+    {
+      "id": "385c7585-404c-4dae-8e14-27c6ec4d1220",
+      "method": "POST",
+      "path": "/v1/verification/:id/complete",
+      "name": "Complete Verification",
+      "summary": "Complete verification",
+      "description": "Complete verification as admin/verifier with VERIFIED or REJECTED and notes.",
+      "tags": [
+        "verification"
+      ],
+      "resource": "Verification",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "status": {
+            "type": "string",
+            "required": true,
+            "enum": [
+              "VERIFIED",
+              "REJECTED",
+              "PENDING"
+            ]
+          },
+          "notes": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Verification completed",
+          "schema": {
+            "id": "string",
+            "status": "string",
+            "verifiedAt": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "4e1f9e5f-fe94-4a00-9296-e7bff70d2c71",
+      "method": "POST",
+      "path": "/v1/fundings/prepare",
+      "name": "Prepare Funding",
+      "summary": "Prepare funding transaction",
+      "description": "Prepare funding transaction. INVESTOR role. UI: Fund Opportunity click. Returns fundingId and Stacks tx payload.",
+      "tags": [
+        "funding"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "receivableId": {
+            "type": "string",
+            "required": true
+          },
+          "amountSbtc": {
+            "type": "string",
+            "required": true,
+            "example": "0.15"
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Funding prepared with tx payload",
+          "schema": {
+            "fundingId": "string",
+            "transaction.contractAddress": "string",
+            "transaction.functionName": "string",
+            "amountSbtc": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "fundingId",
+          "responseField": "fundingId"
+        },
+        {
+          "variable": "fundTxPayload",
+          "responseField": "transaction"
+        }
+      ]
+    },
+    {
+      "id": "31e35fda-0db0-4ad3-b13a-4b48be9cd9fe",
+      "method": "POST",
+      "path": "/v1/fundings/confirm",
+      "name": "Confirm Funding",
+      "summary": "Confirm funding broadcast",
+      "description": "Confirm funding broadcast after wallet returns txHash. INVESTOR role.",
+      "tags": [
+        "funding"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "fundingId": {
+            "type": "string",
+            "required": true
+          },
+          "txHash": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Funding confirmed ACTIVE",
+          "schema": {
+            "id": "string",
+            "status": "string",
+            "txHash": "string",
+            "fundedAt": "string"
+          }
+        }
+      },
+      "produces": [
+        {
+          "variable": "fundTxHash",
+          "responseField": "txHash"
+        }
+      ]
+    },
+    {
+      "id": "e8425db0-8f5a-44d2-9097-0702218af071",
+      "method": "GET",
+      "path": "/v1/fundings/me",
+      "name": "Get My Fundings",
+      "summary": "Get my fundings",
+      "description": "Get my fundings portfolio. INVESTOR role. UI: My Fundings dashboard.",
+      "tags": [
+        "funding"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Investor portfolio",
+          "schema": {
+            "items": "array"
+          }
+        }
+      }
+    },
+    {
+      "id": "8db41078-936c-414d-a3cc-27bdf92b7755",
+      "method": "GET",
+      "path": "/v1/fundings/:id",
+      "name": "Get Funding Details",
+      "summary": "Get funding details",
+      "description": "Get funding tracking details with receivable, business, transactions. Auth required.",
+      "tags": [
+        "funding"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Funding details",
+          "schema": {
+            "id": "string",
+            "amountSbtc": "string",
+            "status": "string",
+            "receivable.id": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "58581667-b036-460b-9104-1ffb13513077",
+      "method": "POST",
+      "path": "/v1/fundings/:id/repayment/prepare",
+      "name": "Prepare Repayment",
+      "summary": "Prepare repayment",
+      "description": "Prepare repayment transaction. BUSINESS role. UI: Repay Receivable click.",
+      "tags": [
+        "repayment"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "Funding id"
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Repayment payload",
+          "schema": {
+            "fundingId": "string",
+            "transaction.functionName": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "8341f559-1b27-480a-bdcc-c9207c326900",
+      "method": "POST",
+      "path": "/v1/fundings/:id/repayment/confirm",
+      "name": "Confirm Repayment",
+      "summary": "Confirm repayment",
+      "description": "Confirm repayment broadcast. BUSINESS role. Body txHash from wallet.",
+      "tags": [
+        "repayment"
+      ],
+      "resource": "Funding",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "requestBody": {
+        "contentType": "application/json",
+        "required": true,
+        "fields": {
+          "txHash": {
+            "type": "string",
+            "required": true
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Repaid",
+          "schema": {
+            "status": "string",
+            "txHash": "string",
+            "settledAt": "string"
+          }
+        }
+      },
+      "consumes": [
+        {
+          "variable": "accessToken",
+          "usedAs": "header:Authorization"
+        }
+      ]
+    },
+    {
+      "id": "accd5045-c7fa-4b51-ab9c-a145cbdbf0bd",
+      "method": "GET",
+      "path": "/v1/transactions/:txHash",
+      "name": "Get Transaction Proof",
+      "summary": "Get transaction proof",
+      "description": "Get transaction proof by hash. Public. UI: Explorer link and proof modal.",
+      "tags": [
+        "transactions"
+      ],
+      "resource": "Transaction",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "middleware": [],
+      "parameters": [
+        {
+          "name": "txHash",
+          "in": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Transaction proof",
+          "schema": {
+            "txHash": "string",
+            "type": "string",
+            "status": "string",
+            "blockHeight": "number",
+            "confirmedAt": "string"
+          }
+        }
+      }
+    },
+    {
+      "id": "a8259b2b-74f4-4fcc-ab7f-2ceb310a7a1a",
+      "method": "GET",
+      "path": "/v1/dashboard/business",
+      "name": "Get Business Dashboard",
+      "summary": "Get business dashboard",
+      "description": "Get business dashboard metrics. BUSINESS role. UI: Business overview.",
+      "tags": [
+        "dashboard"
+      ],
+      "resource": "Dashboard",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Business metrics",
+          "schema": {
+            "stats.totalReceivables": "number",
+            "stats.activeFunding": "string",
+            "recentReceivables": "array"
+          }
+        }
+      },
+      "consumes": [
+        {
+          "variable": "accessToken",
+          "usedAs": "header:Authorization"
+        }
+      ]
+    },
+    {
+      "id": "cf0e6bf4-1a3a-4245-a014-53ae18733efc",
+      "method": "GET",
+      "path": "/v1/dashboard/investor",
+      "name": "Get Investor Dashboard",
+      "summary": "Get investor dashboard",
+      "description": "Get investor dashboard metrics. INVESTOR role. UI: Capital Provider overview.",
+      "tags": [
+        "dashboard"
+      ],
+      "resource": "Dashboard",
+      "source": {
+        "file": "manual-mcp",
+        "line": 1
+      },
+      "security": [
+        {
+          "scheme": "bearerAuth",
+          "required": true
+        }
+      ],
+      "middleware": [],
+      "responses": {
+        "200": {
+          "contentType": "application/json",
+          "description": "Investor metrics",
+          "schema": {
+            "stats.totalFunded": "string",
+            "stats.activeFunding": "string",
+            "recentFunding": "array"
+          }
+        }
+      },
+      "consumes": [
+        {
+          "variable": "accessToken",
+          "usedAs": "header:Authorization"
+        }
+      ]
+    }
+  ],
+  "dependencies": [],
+  "workflows": [],
+  "stateMachines": []
+}

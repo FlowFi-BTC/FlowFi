@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ScaleLoader } from 'react-spinners';
 import { useUser } from '../context/UserContext';
 import { businessApi, investorApi } from '../lib/api';
 import type { BusinessProfile, InvestorProfile } from '../types/api';
+
+// Small in-button loader styled to fit the neo-brutalist UI (compact bars, inherits button color)
+const ButtonLoader = ({ color = '#000000' }: { color?: string }) => (
+  <span className="flex h-5 items-center justify-center" aria-hidden="true">
+    <ScaleLoader
+      className="flex items-center"
+      color={color}
+      speedMultiplier={0.9}
+      height={18}
+      width={3}
+      margin={2}
+    />
+  </span>
+);
 
 const RailStar = ({ className = '' }: { className?: string }) => (
   <svg width="20" height="20" viewBox="0 0 24 24" className={className}>
@@ -40,6 +55,7 @@ export const GetStartedPage: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [companyName, setCompanyName] = useState('');
+  const [companyCountry, setCompanyCountry] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -47,6 +63,23 @@ export const GetStartedPage: React.FC = () => {
   const [existingBusiness, setExistingBusiness] = useState<BusinessProfile | null>(user?.businessProfile || null);
   const [existingInvestor, setExistingInvestor] = useState<InvestorProfile | null>(user?.investorProfile || null);
   const [showManualForm, setShowManualForm] = useState<boolean>(false);
+
+  const isBusy = isConnecting || isVerifying || isSubmitting;
+
+  // Auto-advance: as soon as wallet connects, take user to Verify (step 2)
+  // at any point in the flow — even if they are still on step 1 or navigated away.
+  useEffect(() => {
+    if (wallet.isConnected && activeStep === 1 && !isConnecting) {
+      setActiveStep(2);
+    }
+  }, [wallet.isConnected, activeStep, isConnecting]);
+
+  // Auto-advance: as soon as wallet is verified, take user to Profile (step 3).
+  useEffect(() => {
+    if (wallet.isConnected && isVerified && activeStep !== 3 && !isVerifying) {
+      setActiveStep(3);
+    }
+  }, [wallet.isConnected, isVerified, activeStep, isVerifying]);
 
   useEffect(() => {
     // Reset based on context user first
@@ -179,11 +212,15 @@ export const GetStartedPage: React.FC = () => {
       const selectedRole = role === 'BUSINESS' || role === 'business' ? 'BUSINESS' : 'INVESTOR';
       setRole(selectedRole);
       if (selectedRole === 'BUSINESS') {
+        const trimmedName = companyName.trim();
+        if (!trimmedName) {
+          setApiError('Enter your registered company name to create the business profile.');
+          setIsSubmitting(false);
+          return;
+        }
         const biz = await registerBusinessProfile({
-          companyName: companyName || 'Apex Supply Chain Ltd',
-          registrationNumber: 'RC-998821',
-          website: 'https://apexsupply.io',
-          description: 'Verified trade receivable issuer on Stacks',
+          companyName: trimmedName,
+          country: companyCountry.trim()?.toUpperCase() || undefined,
         });
         const currentBiz = biz || (await businessApi.getMe().catch(() => null));
         if (!currentBiz || currentBiz.verificationStatus !== 'VERIFIED') {
@@ -191,9 +228,15 @@ export const GetStartedPage: React.FC = () => {
           return;
         }
       } else {
-        await registerInvestorProfile(displayName || 'Prudence Capital Vault');
+        const trimmedDisplay = displayName.trim();
+        if (!trimmedDisplay) {
+          setApiError('Enter an investor display name to create the investor profile.');
+          setIsSubmitting(false);
+          return;
+        }
+        await registerInvestorProfile(trimmedDisplay);
       }
-      navigate('/dashboard');
+      navigate(selectedRole === 'INVESTOR' ? '/investor' : '/dashboard');
     } catch (err: any) {
       setApiError(err?.message || 'Failed to register profile on API server');
     } finally {
@@ -227,9 +270,17 @@ export const GetStartedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDisconnect}
-                className=" neo-border bg-[#ffb6b9] px-3.5 py-1.5 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5"
+                disabled={isBusy}
+                className=" neo-border bg-[#ffb6b9] px-3.5 py-1.5 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
-                Disconnect Wallet
+                {isBusy ? (
+                  <span className="flex items-center gap-2">
+                    <ButtonLoader />
+                    <span>Working…</span>
+                  </span>
+                ) : (
+                  'Disconnect Wallet'
+                )}
               </button>
             )}
 
@@ -271,13 +322,14 @@ export const GetStartedPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveStep(1)}
+              disabled={isBusy}
               className={`flex flex-col sm:flex-row items-center justify-center gap-2 p-3  neo-border transition-all relative z-10 ${
                 activeStep === 1
                   ? 'bg-[#a8ff3e] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-y-0.5'
                   : wallet.isConnected
                   ? 'bg-[#a8ff3e]/30 hover:bg-[#a8ff3e]/50'
                   : 'bg-[#f7f7f7]'
-              }`}
+              } disabled:cursor-not-allowed disabled:opacity-60`}
             >
               <div className="h-8 w-8  bg-white neo-border flex items-center justify-center font-medium text-xs text-black">
                 {wallet.isConnected ? '✓' : '1'}
@@ -293,14 +345,14 @@ export const GetStartedPage: React.FC = () => {
             <button
               type="button"
               onClick={() => wallet.isConnected && setActiveStep(2)}
-              disabled={!wallet.isConnected}
+              disabled={!wallet.isConnected || isBusy}
               className={`flex flex-col sm:flex-row items-center justify-center gap-2 p-3  neo-border transition-all relative z-10 ${
                 activeStep === 2
                   ? 'bg-[#22d3ee] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-y-0.5'
                   : isVerified
                   ? 'bg-[#22d3ee]/30 hover:bg-[#22d3ee]/50'
                   : 'bg-[#f7f7f7] opacity-60 cursor-not-allowed'
-              }`}
+              } disabled:cursor-not-allowed`}
             >
               <div className="h-8 w-8  bg-white neo-border flex items-center justify-center font-medium text-xs text-black">
                 {isVerified ? '✓' : '2'}
@@ -316,12 +368,12 @@ export const GetStartedPage: React.FC = () => {
             <button
               type="button"
               onClick={() => isVerified && setActiveStep(3)}
-              disabled={!isVerified}
+              disabled={!isVerified || isBusy}
               className={`flex flex-col sm:flex-row items-center justify-center gap-2 p-3  neo-border transition-all relative z-10 ${
                 activeStep === 3
                   ? 'bg-[#c4b5fd] shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] -translate-y-0.5'
                   : 'bg-[#f7f7f7] opacity-60 cursor-not-allowed'
-              }`}
+              } disabled:cursor-not-allowed`}
             >
               <div className="h-8 w-8  bg-white neo-border flex items-center justify-center font-medium text-xs text-black">
                 3
@@ -350,7 +402,8 @@ export const GetStartedPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleDisconnect}
-                  className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5"
+                  disabled={isBusy}
+                  className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                 >
                   Disconnect Wallet
                 </button>
@@ -363,7 +416,8 @@ export const GetStartedPage: React.FC = () => {
                   type="button"
                   onClick={handleConnectWalletModal}
                   disabled={isConnecting}
-                  className="w-full flex items-center justify-between  neo-border bg-[#a8ff3e] p-6 text-left hover:brightness-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] group"
+                  aria-busy={isConnecting}
+                  className="w-full flex items-center justify-between neo-border bg-[#a8ff3e] p-6 text-left hover:brightness-105 transition-all shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] group disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:brightness-100"
                 >
                   <div className="flex items-center gap-4">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT4HdyuM_mhRNfvlv2xd9S03JUAivmvPFFfryIuhvkVp0IDcJXdpFtnhjKp&s" alt="Stacks" className='w-14 h-14' />
@@ -371,11 +425,15 @@ export const GetStartedPage: React.FC = () => {
                       <div className="font-syne font-medium text-black text-xl">
                         {isConnecting ? 'Launching Wallet Modal...' : 'Connect Stacks Wallet'}
                       </div>
-                    
+                      {isConnecting && (
+                        <div className="text-xs font-medium text-gray-700 mt-1">
+                          Waiting for wallet approval — you will be taken to Verify automatically…
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <span className="font-medium text-lg text-black group-hover:translate-x-1 transition-transform">
-                    {isConnecting ? '⏳' : '→'}
+                  <span className="font-medium text-lg text-black group-hover:translate-x-1 transition-transform min-w-[48px] flex justify-end">
+                    {isConnecting ? <ButtonLoader /> : '→'}
                   </span>
                 </button>
               </div>
@@ -389,7 +447,7 @@ export const GetStartedPage: React.FC = () => {
                     <div className="font-medium text-lg text-black font-mono">
                       {wallet.address}
                     </div>
-                    <div className="text-xs  text-gray-700">
+                    <div className="hidden text-xs  text-gray-700">
                       Balance: <span className="text-[#6B46C1] font-medium">{wallet.sbtcBalance} sBTC</span> • {wallet.stxBalance} STX
                     </div>
                   </div>
@@ -398,14 +456,16 @@ export const GetStartedPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={handleDisconnect}
-                      className=" neo-border bg-[#ffb6b9] px-5 py-3 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5"
+                      disabled={isBusy}
+                      className=" neo-border bg-[#ffb6b9] px-5 py-3 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                     >
                       Disconnect
                     </button>
                     <button
                       type="button"
                       onClick={() => setActiveStep(2)}
-                      className=" neo-border bg-[#a8ff3e] px-6 py-3 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                      disabled={isBusy}
+                      className=" neo-border bg-[#a8ff3e] px-6 py-3 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                     >
                       Proceed to Step 2 →
                     </button>
@@ -427,7 +487,8 @@ export const GetStartedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDisconnect}
-                className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5"
+                disabled={isBusy}
+                className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 Disconnect Wallet
               </button>
@@ -449,12 +510,13 @@ export const GetStartedPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleVerify}
-                    disabled={isVerifying}
-                    className="w-full  neo-border bg-[#22d3ee] py-4 text-xs sm:text-sm  text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-2"
+                    disabled={isVerifying || isConnecting}
+                    aria-busy={isVerifying}
+                    className="w-full neo-border bg-[#22d3ee] py-4 text-xs sm:text-sm text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform flex items-center justify-center gap-3 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0"
                   >
                     {isVerifying ? (
                       <>
-                        <span className="animate-spin">⏳</span>
+                        <ButtonLoader />
                         <span>Verifying Signature & Authenticating...</span>
                       </>
                     ) : (
@@ -465,7 +527,7 @@ export const GetStartedPage: React.FC = () => {
                     )}
                   </button>
                 ) : (
-                  <div className="bg-[#a8ff3e] neo-border p-4 rounded-xl flex items-center justify-between">
+                  <div className="bg-[#a8ff3e] neo-border p-4  flex items-center justify-between">
                     <div className="flex items-center gap-2 font-medium text-xs text-black">
                       <span>✓</span>
                       <span>Wallet verified</span>
@@ -473,7 +535,8 @@ export const GetStartedPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveStep(3)}
-                      className=" neo-border bg-white px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5"
+                      disabled={isBusy}
+                      className=" neo-border bg-white px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
                     >
                       Proceed to Step 3 →
                     </button>
@@ -497,7 +560,8 @@ export const GetStartedPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleDisconnect}
-                className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5"
+                disabled={isBusy}
+                className=" neo-border bg-[#ffb6b9] px-4 py-2 text-xs font-medium text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:bg-[#ffa6a9] transition-transform hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 Disconnect Wallet
               </button>
@@ -507,10 +571,14 @@ export const GetStartedPage: React.FC = () => {
               {/* Option 1: Business Owner */}
               <div
                 onClick={() => {
+                  if (isBusy) return;
                   setRole('BUSINESS');
                   setShowManualForm(false);
                 }}
-                className={`cursor-pointer  p-6 neo-border transition-all space-y-4 relative ${
+                aria-disabled={isBusy}
+                className={`p-6 neo-border transition-all space-y-4 relative ${
+                  isBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                } ${
                   role === 'BUSINESS' || role === 'business'
                     ? 'bg-[#a8ff3e]/20 neo-border-thick shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -translate-y-1'
                     : 'bg-[#f7f7f7] hover:bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
@@ -550,10 +618,14 @@ export const GetStartedPage: React.FC = () => {
               {/* Option 2: Capital Investor */}
               <div
                 onClick={() => {
+                  if (isBusy) return;
                   setRole('INVESTOR');
                   setShowManualForm(false);
                 }}
-                className={`cursor-pointer  p-6 neo-border transition-all space-y-4 relative ${
+                aria-disabled={isBusy}
+                className={`p-6 neo-border transition-all space-y-4 relative ${
+                  isBusy ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                } ${
                   role === 'INVESTOR' || role === 'investor'
                     ? 'bg-[#c4b5fd]/30 neo-border-thick shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] -translate-y-1'
                     : 'bg-[#f7f7f7] hover:bg-white shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
@@ -641,7 +713,7 @@ export const GetStartedPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowManualForm(true)}
-                    className="text-xs font-bold text-gray-700 hover:text-black underline cursor-pointer"
+                    className="hidden text-xs font-bold text-gray-700 hover:text-black underline cursor-pointer"
                   >
                     Need to register another profile or update details?
                   </button>
@@ -650,9 +722,17 @@ export const GetStartedPage: React.FC = () => {
                     type="button"
                     onClick={handleContinueWithExistingProfile}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-sm font-bold text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                    aria-busy={isSubmitting}
+                    className="w-full sm:w-auto neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-sm font-bold text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-3 min-h-[56px]"
                   >
-                    {isSubmitting ? 'Loading Dashboard...' : `Continue as ${existingBusiness.companyName} →`}
+                    {isSubmitting ? (
+                      <>
+                        <ButtonLoader />
+                        <span>Loading Dashboard...</span>
+                      </>
+                    ) : (
+                      `Continue as ${existingBusiness.companyName} →`
+                    )}
                   </button>
                 </div>
               </div>
@@ -686,7 +766,7 @@ export const GetStartedPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setShowManualForm(true)}
-                    className="text-xs font-bold text-gray-700 hover:text-black underline cursor-pointer"
+                    className="hidden text-xs font-bold text-gray-700 hover:text-black underline cursor-pointer"
                   >
                     Need to register another profile or update details?
                   </button>
@@ -695,9 +775,17 @@ export const GetStartedPage: React.FC = () => {
                     type="button"
                     onClick={handleContinueWithExistingProfile}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto neo-border bg-[#c4b5fd] px-8 py-4 font-syne text-sm font-bold text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                    aria-busy={isSubmitting}
+                    className="w-full sm:w-auto neo-border bg-[#c4b5fd] px-8 py-4 font-syne text-sm font-bold text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-3 min-h-[56px]"
                   >
-                    {isSubmitting ? 'Loading Dashboard...' : `Continue as ${existingInvestor.displayName} →`}
+                    {isSubmitting ? (
+                      <>
+                        <ButtonLoader />
+                        <span>Loading Dashboard...</span>
+                      </>
+                    ) : (
+                      `Continue as ${existingInvestor.displayName} →`
+                    )}
                   </button>
                 </div>
               </div>
@@ -720,15 +808,31 @@ export const GetStartedPage: React.FC = () => {
                   </div>
 
                   {role === 'BUSINESS' || role === 'business' ? (
+                    <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Company / Business Name</label>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Company / Business Name *</label>
                       <input
                         type="text"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="Apex Supply Chain Ltd"
-                        className="w-full neo-border rounded-xl px-4 py-2.5 bg-white text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#a8ff3e]"
+                        placeholder="ABC Logistics Ltd"
+                        disabled={isSubmitting}
+                        className="w-full neo-border  px-4 py-2.5 bg-white text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#a8ff3e] disabled:cursor-not-allowed disabled:opacity-60"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Country (ISO-2)</label>
+                      <input
+                        type="text"
+                        value={companyCountry}
+                        onChange={(e) => setCompanyCountry(e.target.value.toUpperCase())}
+                        maxLength={2}
+                        placeholder="NG"
+                        disabled={isSubmitting}
+                        className="w-full neo-border px-4 py-2.5 bg-white text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#a8ff3e] disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                      <p className="mt-1 text-[11px] text-gray-500">Required before on-chain register-business.</p>
+                    </div>
                     </div>
                   ) : (
                     <div>
@@ -740,7 +844,8 @@ export const GetStartedPage: React.FC = () => {
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
                         placeholder="Prudence Capital Vault"
-                        className="w-full neo-border rounded-xl px-4 py-2.5 bg-white text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#c4b5fd]"
+                        disabled={isSubmitting}
+                        className="w-full neo-border  px-4 py-2.5 bg-white text-sm text-black focus:outline-none focus:ring-2 focus:ring-[#c4b5fd] disabled:cursor-not-allowed disabled:opacity-60"
                       />
                     </div>
                   )}
@@ -751,9 +856,17 @@ export const GetStartedPage: React.FC = () => {
                     type="button"
                     onClick={handleCompleteProfile}
                     disabled={isSubmitting}
-                    className="w-full sm:w-auto neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-sm font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                    aria-busy={isSubmitting}
+                    className="w-full sm:w-auto neo-border bg-[#a8ff3e] px-8 py-4 font-syne text-sm font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 flex items-center justify-center gap-3 min-h-[56px]"
                   >
-                    {isSubmitting ? 'Registering Profile via API...' : 'Complete Profile & Enter Dashboard →'}
+                    {isSubmitting ? (
+                      <>
+                        <ButtonLoader />
+                        <span>Registering Profile via API...</span>
+                      </>
+                    ) : (
+                      'Complete Profile & Enter Dashboard →'
+                    )}
                   </button>
                 </div>
               </>
