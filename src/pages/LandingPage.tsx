@@ -433,144 +433,30 @@ export const LandingPage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Card 1 */}
-            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-black pb-3">
-                  <div>
-                    <h3 className="font-syne font-medium text-base">ABC Logistics Inc.</h3>
-                    <p className="text-[11px] font-medium text-gray-500">Receivable #CR-001</p>
-                  </div>
-                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
-                    ✓ Verified
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
-                    <span className="font-medium text-black text-sm">$10,000</span>
-                    <span className="text-[10px] text-gray-500 block">0.15 sBTC</span>
-                  </div>
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">TERM</span>
-                    <span className="font-medium text-black text-sm">45 Days</span>
-                    <span className="text-[10px] text-gray-500 block">Due Block #151k</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium font-syne">
-                    <span>Funding Progress</span>
-                    <span className="text-[#6B46C1]">70% Funded</span>
-                  </div>
-                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
-                    <div className="h-full bg-[#a8ff3e] w-[70%]" />
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsFundingModalOpen(true)}
-                className="w-full  neo-border bg-[#a8ff3e] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
-              >
-                View Opportunity
-              </button>
+          <div className="neo-border-thick bg-white text-black p-12 sm:p-16 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] space-y-6">
+            <div className="inline-flex h-16 w-16 items-center justify-center neo-border bg-[#a8ff3e] text-3xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              📋
             </div>
-
-            {/* Card 2 - MOCK_RECEIVABLE */}
-            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-black pb-3">
-                  <div>
-                    <h3 className="font-syne font-medium text-base truncate max-w-[170px]">
-                      Apex Supply Chain Ltd
-                    </h3>
-                    <p className="text-[11px] font-medium text-gray-500">
-                      Invoice #INV-2041
-                    </p>
-                  </div>
-                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
-                    ✓ Verified
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
-                    <span className="font-medium text-black text-sm">2.50 sBTC</span>
-                    <span className="text-[10px] text-gray-500 block">$162,500 USD</span>
-                  </div>
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">DUE TARGET</span>
-                    <span className="font-medium text-black text-sm">#148,920</span>
-                    <span className="text-[10px] text-gray-500 block">Oct 14, 2026</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium font-syne">
-                    <span>Funding Progress</span>
-                    <span className="text-emerald-600 font-medium">100% Funded</span>
-                  </div>
-                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
-                    <div className="h-full bg-[#22d3ee] w-[100%]" />
-                  </div>
-                </div>
-              </div>
-
+            <div className="space-y-2 max-w-md mx-auto">
+              <h3 className="font-syne text-2xl font-medium text-black">
+                No Receivables Available
+              </h3>
+              <p className="font-syne text-sm font-medium text-gray-600 leading-relaxed">
+                There are currently no active receivables available for funding. Check back soon or submit a new receivable to get started.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
               <Link
-                to="/receivable"
-                className="w-full text-center inline-block  neo-border bg-[#c4b5fd] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                to="/submit-receivable"
+                className="neo-border bg-[#a8ff3e] px-6 py-3 font-syne text-xs font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
               >
-                View Opportunity
+                Submit a Receivable →
               </Link>
-            </div>
-
-            {/* Card 3 */}
-            <div className="neo-border-thick bg-white text-black  p-6 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-black pb-3">
-                  <div>
-                    <h3 className="font-syne font-medium text-base">Apex Freight Supply</h3>
-                    <p className="text-[11px] font-medium text-gray-500">Receivable #CR-003</p>
-                  </div>
-                  <span className="bg-[#a8ff3e] text-black text-[10px] font-medium px-2 py-0.5  neo-border">
-                    ✓ Verified
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs font-syne">
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">REQUESTED</span>
-                    <span className="font-medium text-black text-sm">$78,000</span>
-                    <span className="text-[10px] text-gray-500 block">1.20 sBTC</span>
-                  </div>
-                  <div className="bg-[#f7f7f7] p-2.5 rounded-xl neo-border">
-                    <span className="text-gray-500 block text-[10px] font-medium">TERM</span>
-                    <span className="font-medium text-black text-sm">30 Days</span>
-                    <span className="text-[10px] text-gray-500 block">Due Block #153k</span>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs font-medium font-syne">
-                    <span>Funding Progress</span>
-                    <span className="text-[#6B46C1]">40% Funded</span>
-                  </div>
-                  <div className="h-3 w-full bg-gray-200  neo-border overflow-hidden">
-                    <div className="h-full bg-[#a8ff3e] w-[40%]" />
-                  </div>
-                </div>
-              </div>
-
               <Link
-                to="/receivable"
-                className="w-full text-center inline-block  neo-border bg-[#a8ff3e] py-2.5 text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+                to="/marketplace"
+                className="neo-border bg-[#f7f7f7] px-6 py-3 font-syne text-xs font-medium text-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
               >
-                View Opportunity
+                Browse Marketplace →
               </Link>
             </div>
           </div>

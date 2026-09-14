@@ -54,7 +54,7 @@ export const Marketplace: React.FC = () => {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('OPEN_FOR_FUNDING');
   const [error, setError] = useState<string | null>(null);
 
   // Selected item for Mini Page / Detail Modal
