@@ -54,7 +54,7 @@ export const Marketplace: React.FC = () => {
   const [items, setItems] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('OPEN_FOR_FUNDING');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [error, setError] = useState<string | null>(null);
 
   // Selected item for Mini Page / Detail Modal
@@ -308,8 +308,8 @@ export const Marketplace: React.FC = () => {
               key={f.id}
               onClick={() => setStatusFilter(f.id)}
               className={`neo-border px-4 py-2 font-syne text-xs font-medium transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${statusFilter === f.id
-                  ? 'bg-black text-white -translate-y-0.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
-                  : 'bg-white text-gray-700 hover:-translate-y-0.5 hover:bg-[#a8ff3e] hover:text-black'
+                ? 'bg-black text-white -translate-y-0.5 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]'
+                : 'bg-white text-gray-700 hover:-translate-y-0.5 hover:bg-[#a8ff3e] hover:text-black'
                 }`}
             >
               {f.label}
@@ -477,8 +477,8 @@ export const Marketplace: React.FC = () => {
                         openMiniPage(item);
                       }}
                       className={`w-full text-center inline-block neo-border py-2.5 text-xs font-bold shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform cursor-pointer ${isOpen
-                          ? 'bg-[#a8ff3e] text-black'
-                          : 'bg-[#c4b5fd] text-black'
+                        ? 'bg-[#a8ff3e] text-black'
+                        : 'bg-[#c4b5fd] text-black'
                         }`}
                     >
                       {isOpen ? '⚡ View & Fund Receivable →' : 'Inspect Asset Details →'}

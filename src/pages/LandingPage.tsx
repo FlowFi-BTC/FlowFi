@@ -592,15 +592,15 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2 font-syne text-xs font-medium">
             <Link
-              to="/history"
+              to=""
               className=" neo-border bg-[#f7f7f7] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
             >
               View Pilot Transparency Log →
             </Link>
 
             <Link
-              to="/history"
-              className=" neo-border bg-[#ffb6b9] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              to=""
+              className="neo-border bg-[#ffb6b9] px-6 py-3 text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
             >
               Read Risk & Security Framework →
             </Link>
@@ -620,7 +620,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <a
-              href="https://github.com"
+              href="https://github.com/FlowFi-BTC/FlowFi-BTC"
               target="_blank"
               rel="noopener noreferrer"
               className=" neo-border bg-white px-6 py-2.5 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
@@ -629,7 +629,7 @@ export const LandingPage: React.FC = () => {
             </a>
             <Link
               to="/api-docs"
-              className=" neo-border bg-[#c4b5fd] px-6 py-2.5 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
+              className="hidden neo-border bg-[#c4b5fd] px-6 py-2.5 font-syne text-xs font-medium text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 transition-transform"
             >
               Documentation & API →
             </Link>
@@ -679,7 +679,7 @@ export const LandingPage: React.FC = () => {
           <div>
             <h4 className="font-syne font-medium text-sm text-black mb-3">Stacks Testnet</h4>
             <div className="space-y-2 text-xs font-syne font-medium text-gray-600">
-              <p>Contract: <span className="text-black font-medium">flowfi-escrow</span></p>
+              <p>Contract: <a href='https://explorer.hiro.so/address/ST1WNVWY7WCJESTHM050RAMRRE44KJTKZKJCSRFCQ.flowfi-escrow?chain=testnet' className="text-black font-medium hover:underline hover:text-blue-500">flowfi-escrow</a> | <a href='https://explorer.hiro.so/address/ST1WNVWY7WCJESTHM050RAMRRE44KJTKZKJCSRFCQ.flowfi-registry?chain=testnet' className="text-black font-medium hover:underline hover:text-blue-500">flowfi-registry</a></p>
               <p>Network: <span className="text-black font-medium">Stacks Testnet</span></p>
               <div className="pt-2">
                 <span className="inline-block  neo-border bg-[#a8ff3e] px-3 py-1 text-[10px] font-medium text-black">
