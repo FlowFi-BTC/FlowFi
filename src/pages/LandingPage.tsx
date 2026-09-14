@@ -288,7 +288,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/submit-receivable"
+                to="/get-started"
                 className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
               >
                 Submit Receivable →
@@ -307,7 +307,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/verification"
+                to="/get-started"
                 className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
               >
                 View Verification →
@@ -326,7 +326,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/receivable"
+                to="/get-started"
                 className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
               >
                 Explore Funding →
@@ -345,7 +345,7 @@ export const LandingPage: React.FC = () => {
                 </p>
               </div>
               <Link
-                to="/history"
+                to="/get-started"
                 className="inline-block pt-3 font-syne text-xs font-medium text-[#6B46C1] hover:underline"
               >
                 Inspect Ledger →
